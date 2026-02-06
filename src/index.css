@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@theme {
+  /* Background colors - deep dark theme */
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-bg-tertiary: #1a1a2e;
+  --color-bg-elevated: #22223a;
+  --color-bg-hover: #2a2a45;
+
+  /* Border colors */
+  --color-border-primary: #2a2a45;
+  --color-border-secondary: #3a3a5a;
+  --color-border-accent: #4a4a70;
+
+  /* Text colors */
+  --color-text-primary: #f0f0f5;
+  --color-text-secondary: #a0a0b5;
+  --color-text-muted: #6a6a85;
+
+  /* Accent colors */
+  --color-accent-blue: #3b82f6;
+  --color-accent-blue-hover: #2563eb;
+  --color-accent-blue-glow: #3b82f640;
+
+  /* Status colors */
+  --color-status-open: #3b82f6;
+  --color-status-in-review: #f59e0b;
+  --color-status-rejected: #ef4444;
+  --color-status-approved: #10b981;
+  --color-status-tech-debt: #8b5cf6;
+
+  /* Status glows */
+  --color-glow-blue: #3b82f630;
+  --color-glow-yellow: #f59e0b30;
+  --color-glow-red: #ef444430;
+  --color-glow-green: #10b98130;
+  --color-glow-purple: #8b5cf630;
+
+  /* Priority colors */
+  --color-priority-low: #6b7280;
+  --color-priority-medium: #3b82f6;
+  --color-priority-high: #f59e0b;
+  --color-priority-critical: #ef4444;
+}
+
+/* Base styles */
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-accent);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: linear-gradient(
+    135deg,
+    rgba(26, 26, 46, 0.8) 0%,
+    rgba(18, 18, 26, 0.9) 100%
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border-primary);
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px var(--color-glow-blue), 0 0 40px var(--color-glow-blue);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px var(--color-glow-green), 0 0 40px var(--color-glow-green);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 20px var(--color-glow-yellow), 0 0 40px var(--color-glow-yellow);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px var(--color-glow-red), 0 0 40px var(--color-glow-red);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px var(--color-glow-purple), 0 0 40px var(--color-glow-purple);
+}
+
+/* Timeline line gradient */
+.timeline-line {
+  background: linear-gradient(
+    180deg,
+    var(--color-status-open) 0%,
+    var(--color-status-in-review) 50%,
+    var(--color-status-approved) 100%
+  );
+}
+
+/* Shimmer animation for loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-bg-elevated) 50%,
+    var(--color-bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

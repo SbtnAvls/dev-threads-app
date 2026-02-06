@@ -1,0 +1,191 @@
+import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import {
+  Clock,
+  ChevronRight,
+  AlertCircle
+} from 'lucide-react'
+import clsx from 'clsx'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { Avatar, StatusBadge, PriorityBadge } from '../ui'
+import { fullName, parseDate } from '../../utils/helpers'
+
+const glowByStatus = {
+  open: 'hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]',
+  in_review: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]',
+  rejected: 'hover:shadow-[0_0_30px_rgba(239,68,68,0.15)]',
+  approved: 'hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]',
+  tech_debt: 'hover:shadow-[0_0_30px_rgba(139,92,246,0.15)]',
+}
+
+const borderByStatus = {
+  open: 'hover:border-status-open/50',
+  in_review: 'hover:border-status-in-review/50',
+  rejected: 'hover:border-status-rejected/50',
+  approved: 'hover:border-status-approved/50',
+  tech_debt: 'hover:border-status-tech-debt/50',
+}
+
+export function QACard({ qa, index = 0 }) {
+  const assigneeName = fullName(qa.assigned_to)
+  const updatedAt = parseDate(qa.updated_at)
+  const timelineCount = qa.timeline_count ?? qa.timeline?.length ?? 0
+
+  return (
+    <Link to={`/qa/${qa.id}`}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        whileHover={{ y: -2, scale: 1.005 }}
+        className={clsx(
+          'relative group rounded-xl border border-border-primary bg-bg-secondary p-4',
+          'transition-all duration-300 cursor-pointer overflow-hidden',
+          glowByStatus[qa.status],
+          borderByStatus[qa.status]
+        )}
+      >
+        {/* Priority indicator line */}
+        <div
+          className={clsx(
+            'absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-300',
+            qa.priority === 'critical' && 'bg-priority-critical',
+            qa.priority === 'high' && 'bg-priority-high',
+            qa.priority === 'medium' && 'bg-priority-medium',
+            qa.priority === 'low' && 'bg-priority-low',
+            'group-hover:w-1.5'
+          )}
+        />
+
+        {/* Main content */}
+        <div className="pl-3">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-text-primary line-clamp-1 group-hover:text-white transition-colors">
+                {qa.title}
+              </h3>
+              <p className="text-sm text-text-secondary line-clamp-2 mt-1">
+                {qa.description}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              <StatusBadge status={qa.status} />
+              <PriorityBadge priority={qa.priority} size="sm" />
+            </div>
+          </div>
+
+          {/* Tags */}
+          {qa.tags && qa.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {qa.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 rounded-md text-xs bg-bg-elevated text-text-muted"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Footer row */}
+          <div className="flex items-center justify-between pt-3 border-t border-border-primary">
+            {/* Left side - Assignee and metadata */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Avatar name={assigneeName} size="xs" />
+                <span className="text-sm text-text-secondary">
+                  {assigneeName}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 text-text-muted">
+                <div className="flex items-center gap-1" title="Eventos en timeline">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span className="text-xs">{timelineCount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side - Time and arrow */}
+            <div className="flex items-center gap-2">
+              {updatedAt && (
+                <span className="text-xs text-text-muted">
+                  {formatDistanceToNow(updatedAt, { addSuffix: true, locale: es })}
+                </span>
+              )}
+              <motion.div
+                initial={{ x: -5, opacity: 0 }}
+                animate={{ x: 0, opacity: 0.5 }}
+                whileHover={{ x: 0, opacity: 1 }}
+                className="text-text-muted group-hover:text-white"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Rejected/Tech Debt warning */}
+          {(qa.status === 'rejected' || qa.status === 'tech_debt') && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className={clsx(
+                'mt-3 p-2 rounded-lg flex items-start gap-2 text-sm',
+                qa.status === 'rejected' && 'bg-status-rejected/10 text-status-rejected',
+                qa.status === 'tech_debt' && 'bg-status-tech-debt/10 text-status-tech-debt'
+              )}
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span className="line-clamp-2">
+                {qa.status === 'rejected'
+                  ? 'Rechazado - Requiere correcciones'
+                  : `Deuda tecnica - Fecha tentativa: ${qa.due_date ? new Date(qa.due_date).toLocaleDateString('es') : 'Por definir'}`}
+              </span>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </Link>
+  )
+}
+
+// Compact version for lists
+export function QACardCompact({ qa, index = 0 }) {
+  const assigneeName = fullName(qa.assigned_to)
+  const updatedAt = parseDate(qa.updated_at)
+
+  return (
+    <Link to={`/qa/${qa.id}`}>
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.03 }}
+        whileHover={{ x: 4 }}
+        className="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-elevated/50 transition-all cursor-pointer group"
+      >
+        <div
+          className={clsx(
+            'w-2 h-2 rounded-full flex-shrink-0',
+            qa.status === 'open' && 'bg-status-open',
+            qa.status === 'in_review' && 'bg-status-in-review animate-pulse',
+            qa.status === 'rejected' && 'bg-status-rejected',
+            qa.status === 'approved' && 'bg-status-approved',
+            qa.status === 'tech_debt' && 'bg-status-tech-debt'
+          )}
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-text-primary truncate group-hover:text-white transition-colors">
+            {qa.title}
+          </p>
+          <p className="text-xs text-text-muted">
+            {assigneeName}{updatedAt ? ` \u2022 ${formatDistanceToNow(updatedAt, { addSuffix: true, locale: es })}` : ''}
+          </p>
+        </div>
+        <StatusBadge status={qa.status} size="sm" />
+      </motion.div>
+    </Link>
+  )
+}
