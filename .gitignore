@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+
+# Dev tools
+.claude/
+developing/
+testsprite_tests/
+dist.tar.gz

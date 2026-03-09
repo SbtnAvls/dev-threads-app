@@ -32,7 +32,7 @@ export function DevelopersPage() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Desarrolladores</h1>
           <p className="text-text-secondary mt-1">
-            Gestiona el equipo y sus QAs asignados
+            Gestiona el equipo y sus issues asignados
           </p>
         </div>
         <Button icon={Plus} disabled title="Proximamente">

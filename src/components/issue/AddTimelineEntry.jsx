@@ -38,7 +38,7 @@ const actionTypes = [
     icon: CheckCircle2,
     color: 'text-status-approved',
     bgColor: 'bg-status-approved/10',
-    description: 'Marcar el QA como aprobado',
+    description: 'Marcar el issue como aprobado',
   },
   {
     type: 'rejection',
@@ -61,8 +61,8 @@ const actionTypes = [
 const permissionMap = {
   comment: 'comment',
   commit: 'add_commit',
-  approval: 'approve_qa',
-  rejection: 'reject_qa',
+  approval: 'approve_dev',
+  rejection: 'reject_dev',
   tech_debt: 'mark_tech_debt',
 }
 

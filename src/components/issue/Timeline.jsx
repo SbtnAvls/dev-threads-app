@@ -7,7 +7,7 @@ export function Timeline({ entries = [], className }) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-text-muted">
         <Clock className="w-12 h-12 mb-4 opacity-50" />
-        <p className="text-sm">No hay actividad en este QA</p>
+        <p className="text-sm">No hay actividad en este issue</p>
       </div>
     )
   }

@@ -1,7 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/qa'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/dev'
 
-const TOKEN_KEY = 'qa_access_token'
-const REFRESH_KEY = 'qa_refresh_token'
+const TOKEN_KEY = 'dev_access_token'
+const REFRESH_KEY = 'dev_refresh_token'
+
+// One-time migration from old qa_* keys to dev_* keys
+;(() => {
+  const oldAccess = localStorage.getItem('qa_access_token')
+  const oldRefresh = localStorage.getItem('qa_refresh_token')
+  if (oldAccess && !localStorage.getItem(TOKEN_KEY)) {
+    localStorage.setItem(TOKEN_KEY, oldAccess)
+  }
+  if (oldRefresh && !localStorage.getItem(REFRESH_KEY)) {
+    localStorage.setItem(REFRESH_KEY, oldRefresh)
+  }
+  localStorage.removeItem('qa_access_token')
+  localStorage.removeItem('qa_refresh_token')
+})()
 
 export function getTokens() {
   return {
@@ -87,7 +101,7 @@ async function apiClient(endpoint, options = {}) {
     } catch {
       refreshPromise = null
       clearTokens()
-      window.dispatchEvent(new CustomEvent('qa-auth-expired'))
+      window.dispatchEvent(new CustomEvent('dev-auth-expired'))
       throw new ApiError('Session expired. Please log in again.', 401)
     }
   }

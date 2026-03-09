@@ -24,9 +24,9 @@ const navItems = [
     to: '/developers',
   },
   {
-    label: 'Todos los QAs',
+    label: 'Todos los Issues',
     icon: ClipboardList,
-    to: '/qas',
+    to: '/issues',
   },
 ]
 
@@ -34,19 +34,19 @@ const quickFilters = [
   {
     label: 'En Revision',
     icon: Clock,
-    to: '/qas?status=in_review',
+    to: '/issues?status=in_review',
     color: 'text-status-in-review',
   },
   {
     label: 'Rechazados',
     icon: AlertTriangle,
-    to: '/qas?status=rejected',
+    to: '/issues?status=rejected',
     color: 'text-status-rejected',
   },
   {
     label: 'Aprobados',
     icon: CheckCircle2,
-    to: '/qas?status=approved',
+    to: '/issues?status=approved',
     color: 'text-status-approved',
   },
 ]

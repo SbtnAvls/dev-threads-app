@@ -1,6 +1,6 @@
 import apiClient from './apiClient'
 
-const qaService = {
+const issueService = {
   async getIssues(params = {}) {
     const query = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
@@ -50,4 +50,4 @@ const qaService = {
   },
 }
 
-export default qaService
+export default issueService

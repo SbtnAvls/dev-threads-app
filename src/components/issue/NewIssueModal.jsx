@@ -14,7 +14,7 @@ const priorityOptions = [
 
 const commonTags = ['frontend', 'backend', 'api', 'autenticacion', 'interfaz', 'rendimiento', 'error', 'funcionalidad']
 
-export function NewQAModal({ isOpen, onClose, onSubmit }) {
+export function NewIssueModal({ isOpen, onClose, onSubmit }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
@@ -74,8 +74,8 @@ export function NewQAModal({ isOpen, onClose, onSubmit }) {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Nuevo QA"
-      description="Crea un nuevo ticket de QA para el equipo"
+      title="Nuevo Issue"
+      description="Crea un nuevo issue para el equipo"
       size="lg"
     >
       <div className="space-y-5">
@@ -213,7 +213,7 @@ export function NewQAModal({ isOpen, onClose, onSubmit }) {
           Cancelar
         </Button>
         <Button onClick={handleSubmit} disabled={!isValid}>
-          Crear QA
+          Crear Issue
         </Button>
       </ModalFooter>
     </Modal>

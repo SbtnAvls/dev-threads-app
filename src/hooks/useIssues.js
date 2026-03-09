@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import qaService from '../services/qaService'
+import issueService from '../services/issueService'
 
-export function useQAs(filters = {}) {
+export function useIssues(filters = {}) {
   const [issues, setIssues] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -10,7 +10,7 @@ export function useQAs(filters = {}) {
     setLoading(true)
     setError(null)
     try {
-      const data = await qaService.getIssues(filters)
+      const data = await issueService.getIssues(filters)
       // Handle paginated response
       setIssues(data.results || data)
     } catch (err) {
@@ -25,19 +25,19 @@ export function useQAs(filters = {}) {
   }, [fetchIssues])
 
   const createIssue = useCallback(async (data) => {
-    const newIssue = await qaService.createIssue(data)
+    const newIssue = await issueService.createIssue(data)
     await fetchIssues()
     return newIssue
   }, [fetchIssues])
 
   const updateIssue = useCallback(async (id, data) => {
-    const updated = await qaService.updateIssue(id, data)
+    const updated = await issueService.updateIssue(id, data)
     await fetchIssues()
     return updated
   }, [fetchIssues])
 
   const deleteIssue = useCallback(async (id) => {
-    await qaService.deleteIssue(id)
+    await issueService.deleteIssue(id)
     await fetchIssues()
   }, [fetchIssues])
 
@@ -52,7 +52,7 @@ export function useQAs(filters = {}) {
   }
 }
 
-export function useQADetail(id) {
+export function useIssueDetail(id) {
   const [issue, setIssue] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -62,7 +62,7 @@ export function useQADetail(id) {
     setLoading(true)
     setError(null)
     try {
-      const data = await qaService.getIssue(id)
+      const data = await issueService.getIssue(id)
       setIssue(data)
     } catch (err) {
       setError(err.message || 'Error loading issue')
@@ -76,7 +76,7 @@ export function useQADetail(id) {
   }, [fetchIssue])
 
   const updateIssue = useCallback(async (data) => {
-    const updated = await qaService.updateIssue(id, data)
+    const updated = await issueService.updateIssue(id, data)
     await fetchIssue()
     return updated
   }, [id, fetchIssue])
@@ -84,7 +84,7 @@ export function useQADetail(id) {
   return { issue, loading, error, refetch: fetchIssue, updateIssue }
 }
 
-export function useQAStats() {
+export function useIssueStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -92,7 +92,7 @@ export function useQAStats() {
   const fetchStats = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await qaService.getStats()
+      const data = await issueService.getStats()
       setStats(data)
     } catch (err) {
       setError(err.message)
@@ -117,7 +117,7 @@ export function useDevStats(developerId) {
     if (!developerId) return
     setLoading(true)
     try {
-      const data = await qaService.getDevStats(developerId)
+      const data = await issueService.getDevStats(developerId)
       setStats(data)
     } catch (err) {
       setError(err.message)

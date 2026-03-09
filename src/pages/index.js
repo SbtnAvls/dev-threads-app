@@ -1,6 +1,6 @@
 export { Dashboard } from './Dashboard'
 export { DevelopersPage } from './DevelopersPage'
 export { DevDetailPage } from './DevDetailPage'
-export { QAsPage } from './QAsPage'
-export { QADetailPage } from './QADetailPage'
+export { IssuesPage } from './IssuesPage'
+export { IssueDetailPage } from './IssueDetailPage'
 export { LoginPage } from './LoginPage'

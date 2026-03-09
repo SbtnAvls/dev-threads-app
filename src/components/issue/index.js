@@ -1,5 +1,5 @@
-export { QACard, QACardCompact } from './QACard'
+export { IssueCard, IssueCardCompact } from './IssueCard'
 export { StatusNode } from './StatusNode'
 export { Timeline, TimelinePreview } from './Timeline'
 export { AddTimelineEntry } from './AddTimelineEntry'
-export { NewQAModal } from './NewQAModal'
+export { NewIssueModal } from './NewIssueModal'

@@ -27,13 +27,13 @@ const borderByStatus = {
   tech_debt: 'hover:border-status-tech-debt/50',
 }
 
-export function QACard({ qa, index = 0 }) {
-  const assigneeName = fullName(qa.assigned_to)
-  const updatedAt = parseDate(qa.updated_at)
-  const timelineCount = qa.timeline_count ?? qa.timeline?.length ?? 0
+export function IssueCard({ issue, index = 0 }) {
+  const assigneeName = fullName(issue.assigned_to)
+  const updatedAt = parseDate(issue.updated_at)
+  const timelineCount = issue.timeline_count ?? issue.timeline?.length ?? 0
 
   return (
-    <Link to={`/qa/${qa.id}`}>
+    <Link to={`/issue/${issue.id}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -42,18 +42,18 @@ export function QACard({ qa, index = 0 }) {
         className={clsx(
           'relative group rounded-xl border border-border-primary bg-bg-secondary p-4',
           'transition-all duration-300 cursor-pointer overflow-hidden',
-          glowByStatus[qa.status],
-          borderByStatus[qa.status]
+          glowByStatus[issue.status],
+          borderByStatus[issue.status]
         )}
       >
         {/* Priority indicator line */}
         <div
           className={clsx(
             'absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-all duration-300',
-            qa.priority === 'critical' && 'bg-priority-critical',
-            qa.priority === 'high' && 'bg-priority-high',
-            qa.priority === 'medium' && 'bg-priority-medium',
-            qa.priority === 'low' && 'bg-priority-low',
+            issue.priority === 'critical' && 'bg-priority-critical',
+            issue.priority === 'high' && 'bg-priority-high',
+            issue.priority === 'medium' && 'bg-priority-medium',
+            issue.priority === 'low' && 'bg-priority-low',
             'group-hover:w-1.5'
           )}
         />
@@ -64,22 +64,22 @@ export function QACard({ qa, index = 0 }) {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-text-primary line-clamp-1 group-hover:text-white transition-colors">
-                {qa.title}
+                {issue.title}
               </h3>
               <p className="text-sm text-text-secondary line-clamp-2 mt-1">
-                {qa.description}
+                {issue.description}
               </p>
             </div>
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
-              <StatusBadge status={qa.status} />
-              <PriorityBadge priority={qa.priority} size="sm" />
+              <StatusBadge status={issue.status} />
+              <PriorityBadge priority={issue.priority} size="sm" />
             </div>
           </div>
 
           {/* Tags */}
-          {qa.tags && qa.tags.length > 0 && (
+          {issue.tags && issue.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {qa.tags.map((tag) => (
+              {issue.tags.map((tag) => (
                 <span
                   key={tag}
                   className="px-2 py-0.5 rounded-md text-xs bg-bg-elevated text-text-muted"
@@ -128,21 +128,21 @@ export function QACard({ qa, index = 0 }) {
           </div>
 
           {/* Rejected/Tech Debt warning */}
-          {(qa.status === 'rejected' || qa.status === 'tech_debt') && (
+          {(issue.status === 'rejected' || issue.status === 'tech_debt') && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className={clsx(
                 'mt-3 p-2 rounded-lg flex items-start gap-2 text-sm',
-                qa.status === 'rejected' && 'bg-status-rejected/10 text-status-rejected',
-                qa.status === 'tech_debt' && 'bg-status-tech-debt/10 text-status-tech-debt'
+                issue.status === 'rejected' && 'bg-status-rejected/10 text-status-rejected',
+                issue.status === 'tech_debt' && 'bg-status-tech-debt/10 text-status-tech-debt'
               )}
             >
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span className="line-clamp-2">
-                {qa.status === 'rejected'
+                {issue.status === 'rejected'
                   ? 'Rechazado - Requiere correcciones'
-                  : `Deuda tecnica - Fecha tentativa: ${qa.due_date ? new Date(qa.due_date).toLocaleDateString('es') : 'Por definir'}`}
+                  : `Deuda tecnica - Fecha tentativa: ${issue.due_date ? new Date(issue.due_date).toLocaleDateString('es') : 'Por definir'}`}
               </span>
             </motion.div>
           )}
@@ -153,12 +153,12 @@ export function QACard({ qa, index = 0 }) {
 }
 
 // Compact version for lists
-export function QACardCompact({ qa, index = 0 }) {
-  const assigneeName = fullName(qa.assigned_to)
-  const updatedAt = parseDate(qa.updated_at)
+export function IssueCardCompact({ issue, index = 0 }) {
+  const assigneeName = fullName(issue.assigned_to)
+  const updatedAt = parseDate(issue.updated_at)
 
   return (
-    <Link to={`/qa/${qa.id}`}>
+    <Link to={`/issue/${issue.id}`}>
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -169,22 +169,22 @@ export function QACardCompact({ qa, index = 0 }) {
         <div
           className={clsx(
             'w-2 h-2 rounded-full flex-shrink-0',
-            qa.status === 'open' && 'bg-status-open',
-            qa.status === 'in_review' && 'bg-status-in-review animate-pulse',
-            qa.status === 'rejected' && 'bg-status-rejected',
-            qa.status === 'approved' && 'bg-status-approved',
-            qa.status === 'tech_debt' && 'bg-status-tech-debt'
+            issue.status === 'open' && 'bg-status-open',
+            issue.status === 'in_review' && 'bg-status-in-review animate-pulse',
+            issue.status === 'rejected' && 'bg-status-rejected',
+            issue.status === 'approved' && 'bg-status-approved',
+            issue.status === 'tech_debt' && 'bg-status-tech-debt'
           )}
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-text-primary truncate group-hover:text-white transition-colors">
-            {qa.title}
+            {issue.title}
           </p>
           <p className="text-xs text-text-muted">
             {assigneeName}{updatedAt ? ` \u2022 ${formatDistanceToNow(updatedAt, { addSuffix: true, locale: es })}` : ''}
           </p>
         </div>
-        <StatusBadge status={qa.status} size="sm" />
+        <StatusBadge status={issue.status} size="sm" />
       </motion.div>
     </Link>
   )

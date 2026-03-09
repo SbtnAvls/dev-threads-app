@@ -11,15 +11,15 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Timeline, AddTimelineEntry } from '../components/qa'
+import { Timeline, AddTimelineEntry } from '../components/issue'
 import { Button, Avatar, StatusBadge, PriorityBadge, Card, Confetti, useToast } from '../components/ui'
-import { useQADetail, useTimeline } from '../hooks'
+import { useIssueDetail, useTimeline } from '../hooks'
 import { fullName, parseDate } from '../utils/helpers'
 import { useState } from 'react'
 
-export function QADetailPage() {
+export function IssueDetailPage() {
   const { id } = useParams()
-  const { issue: qa, loading, error, refetch: refetchIssue } = useQADetail(id)
+  const { issue, loading, error, refetch: refetchIssue } = useIssueDetail(id)
   const { entries, addEntry, refetch: refetchTimeline } = useTimeline(id)
   const [showMenu, setShowMenu] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
@@ -33,29 +33,29 @@ export function QADetailPage() {
     )
   }
 
-  if (error || !qa) {
+  if (error || !issue) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="text-6xl mb-4">🔍</div>
-        <h1 className="text-2xl font-bold text-text-primary mb-2">QA no encontrado</h1>
-        <p className="text-text-secondary mb-4">{error || 'El QA que buscas no existe'}</p>
-        <Link to="/qas">
+        <h1 className="text-2xl font-bold text-text-primary mb-2">Issue no encontrado</h1>
+        <p className="text-text-secondary mb-4">{error || 'El issue que buscas no existe'}</p>
+        <Link to="/issues">
           <Button variant="secondary" icon={ArrowLeft}>
-            Volver a QAs
+            Volver a Issues
           </Button>
         </Link>
       </div>
     )
   }
 
-  const assigneeName = fullName(qa.assigned_to)
-  const creatorName = fullName(qa.created_by)
-  const createdAt = parseDate(qa.created_at)
-  const updatedAt = parseDate(qa.updated_at)
-  const dueDate = parseDate(qa.due_date)
+  const assigneeName = fullName(issue.assigned_to)
+  const creatorName = fullName(issue.created_by)
+  const createdAt = parseDate(issue.created_at)
+  const updatedAt = parseDate(issue.updated_at)
+  const dueDate = parseDate(issue.due_date)
 
   // Use timeline from the detail endpoint or from the separate timeline hook
-  const timelineEntries = qa.timeline || entries
+  const timelineEntries = issue.timeline || entries
 
   const handleAddEntry = async (entry) => {
     try {
@@ -64,11 +64,11 @@ export function QADetailPage() {
 
       if (entry.type === 'approval') {
         setShowConfetti(true)
-        toast.success('QA aprobado correctamente')
+        toast.success('Issue aprobado correctamente')
       } else if (entry.type === 'rejection') {
-        toast.warning('QA rechazado - pendiente de correcciones')
+        toast.warning('Issue rechazado - pendiente de correcciones')
       } else if (entry.type === 'tech_debt') {
-        toast.info('QA marcado como deuda tecnica')
+        toast.info('Issue marcado como deuda tecnica')
       } else if (entry.type === 'commit') {
         toast.success('Commit vinculado correctamente')
       } else {
@@ -85,14 +85,14 @@ export function QADetailPage() {
       <Confetti isActive={showConfetti} onComplete={() => setShowConfetti(false)} />
 
       {/* Back button */}
-      <Link to="/qas" className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
+      <Link to="/issues" className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        <span>Volver a QAs</span>
+        <span>Volver a Issues</span>
       </Link>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - QA details and timeline */}
+        {/* Left column - Issue details and timeline */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header card */}
           <motion.div
@@ -101,7 +101,7 @@ export function QADetailPage() {
             className="rounded-2xl border border-border-primary bg-bg-secondary p-6 relative overflow-hidden"
           >
             {/* Success glow effect when approved */}
-            {qa.status === 'approved' && (
+            {issue.status === 'approved' && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -113,11 +113,11 @@ export function QADetailPage() {
             <div className="flex items-start justify-between gap-4 mb-4 relative">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <StatusBadge status={qa.status} />
-                  <PriorityBadge priority={qa.priority} />
+                  <StatusBadge status={issue.status} />
+                  <PriorityBadge priority={issue.priority} />
                 </div>
                 <h1 className="text-2xl font-bold text-text-primary">
-                  {qa.title}
+                  {issue.title}
                 </h1>
               </div>
 
@@ -163,13 +163,13 @@ export function QADetailPage() {
 
             {/* Description */}
             <p className="text-text-secondary leading-relaxed mb-4">
-              {qa.description}
+              {issue.description}
             </p>
 
             {/* Tags */}
-            {qa.tags && qa.tags.length > 0 && (
+            {issue.tags && issue.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {qa.tags.map((tag) => (
+                {issue.tags.map((tag) => (
                   <motion.span
                     key={tag}
                     whileHover={{ scale: 1.05 }}
@@ -189,7 +189,7 @@ export function QADetailPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <AddTimelineEntry onAdd={handleAddEntry} currentStatus={qa.status} />
+            <AddTimelineEntry onAdd={handleAddEntry} currentStatus={issue.status} />
           </motion.div>
 
           {/* Timeline */}
@@ -206,7 +206,7 @@ export function QADetailPage() {
         {/* Right column - Sidebar */}
         <div className="space-y-4">
           {/* Assigned to */}
-          {qa.assigned_to && (
+          {issue.assigned_to && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -215,13 +215,13 @@ export function QADetailPage() {
               <Card>
                 <h3 className="text-sm font-medium text-text-muted mb-3">Asignado a</h3>
                 <Link
-                  to={`/developer/${qa.assigned_to.id}`}
+                  to={`/developer/${issue.assigned_to.id}`}
                   className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-bg-elevated transition-colors"
                 >
                   <Avatar name={assigneeName} size="md" />
                   <div>
                     <p className="font-medium text-text-primary">{assigneeName}</p>
-                    <p className="text-sm text-text-muted">{qa.assigned_to.email}</p>
+                    <p className="text-sm text-text-muted">{issue.assigned_to.email}</p>
                   </div>
                 </Link>
               </Card>
@@ -229,7 +229,7 @@ export function QADetailPage() {
           )}
 
           {/* Created by */}
-          {qa.created_by && (
+          {issue.created_by && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -238,13 +238,13 @@ export function QADetailPage() {
               <Card>
                 <h3 className="text-sm font-medium text-text-muted mb-3">Creado por</h3>
                 <Link
-                  to={`/developer/${qa.created_by.id}`}
+                  to={`/developer/${issue.created_by.id}`}
                   className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-bg-elevated transition-colors"
                 >
                   <Avatar name={creatorName} size="md" />
                   <div>
                     <p className="font-medium text-text-primary">{creatorName}</p>
-                    <p className="text-sm text-text-muted">{qa.created_by.email}</p>
+                    <p className="text-sm text-text-muted">{issue.created_by.email}</p>
                   </div>
                 </Link>
               </Card>

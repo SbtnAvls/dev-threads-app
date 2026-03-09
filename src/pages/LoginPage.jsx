@@ -49,7 +49,7 @@ export function LoginPage() {
           >
             <Bug className="w-10 h-10 text-white" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-text-primary">QA Threads</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Dev Threads</h1>
           <p className="text-text-secondary mt-1">Inicia sesion para continuar</p>
         </div>
 
@@ -79,10 +79,13 @@ export function LoginPage() {
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
               <input
+                id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
+                aria-label="Email"
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
                 autoComplete="email"
                 autoFocus
@@ -98,10 +101,14 @@ export function LoginPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
               <input
+                id="password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                aria-label="Password"
+                data-testid="password-input"
                 className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
                 autoComplete="current-password"
               />
@@ -120,6 +127,9 @@ export function LoginPage() {
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             type="submit"
+            data-testid="login-submit"
+            name="login-submit"
+            aria-label="Iniciar Sesion"
             disabled={loading || !email.trim() || !password.trim()}
             className="w-full py-2.5 rounded-lg bg-accent-blue text-white font-medium text-sm hover:bg-accent-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >

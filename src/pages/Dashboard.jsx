@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, Badge, StatusBadge, Avatar, Button } from '../components/ui'
-import { useQAs, useQAStats, useDevelopers } from '../hooks'
+import { useIssues, useIssueStats, useDevelopers } from '../hooks'
 import { fullName, parseDate } from '../utils/helpers'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -31,13 +31,13 @@ const item = {
 }
 
 export function Dashboard() {
-  const { stats, loading: statsLoading } = useQAStats()
-  const { issues: recentQAs, loading: qasLoading } = useQAs({ ordering: '-updated_at' })
+  const { stats, loading: statsLoading } = useIssueStats()
+  const { issues: recentIssues, loading: issuesLoading } = useIssues({ ordering: '-updated_at' })
   const { developers, loading: devsLoading } = useDevelopers()
 
   const statCards = stats ? [
     {
-      label: 'Total QAs',
+      label: 'Total Issues',
       value: stats.total,
       icon: Bug,
       color: 'text-accent-blue',
@@ -72,7 +72,7 @@ export function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Panel</h1>
         <p className="text-text-secondary mt-1">
-          Resumen general del estado de los QAs
+          Resumen general del estado de los issues
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Recent QAs */}
+        {/* Recent Issues */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -177,8 +177,8 @@ export function Dashboard() {
           <Card padding="none">
             <div className="p-4 border-b border-border-primary">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-text-primary">QAs Recientes</h2>
-                <Link to="/qas">
+                <h2 className="font-semibold text-text-primary">Issues Recientes</h2>
+                <Link to="/issues">
                   <Button variant="ghost" size="sm" icon={ArrowRight} iconPosition="right">
                     Ver todos
                   </Button>
@@ -186,20 +186,20 @@ export function Dashboard() {
               </div>
             </div>
             <div className="divide-y divide-border-primary">
-              {qasLoading ? (
+              {issuesLoading ? (
                 <div className="p-8 flex justify-center">
                   <div className="w-6 h-6 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                recentQAs.slice(0, 5).map((qa) => {
-                  const assigneeName = fullName(qa.assigned_to)
-                  const updatedAt = parseDate(qa.updated_at)
-                  const timelineCount = qa.timeline_count ?? 0
+                recentIssues.slice(0, 5).map((issue) => {
+                  const assigneeName = fullName(issue.assigned_to)
+                  const updatedAt = parseDate(issue.updated_at)
+                  const timelineCount = issue.timeline_count ?? 0
 
                   return (
                     <Link
-                      key={qa.id}
-                      to={`/qa/${qa.id}`}
+                      key={issue.id}
+                      to={`/issue/${issue.id}`}
                       className="flex items-start gap-4 p-4 hover:bg-bg-elevated/50 transition-colors"
                     >
                       <div className="flex-shrink-0 mt-1">
@@ -208,12 +208,12 @@ export function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium text-text-primary line-clamp-1">
-                            {qa.title}
+                            {issue.title}
                           </p>
-                          <StatusBadge status={qa.status} size="sm" />
+                          <StatusBadge status={issue.status} size="sm" />
                         </div>
                         <p className="text-sm text-text-secondary line-clamp-1 mt-1">
-                          {qa.description}
+                          {issue.description}
                         </p>
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-xs text-text-muted">
@@ -255,13 +255,13 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-text-primary">
-                    {stats.rejected} QA{stats.rejected > 1 ? 's' : ''} rechazado{stats.rejected > 1 ? 's' : ''}
+                    {stats.rejected} issue{stats.rejected > 1 ? 's' : ''} rechazado{stats.rejected > 1 ? 's' : ''}
                   </h3>
                   <p className="text-sm text-text-secondary">
-                    Hay QAs que necesitan atencion inmediata
+                    Hay issues que necesitan atencion inmediata
                   </p>
                 </div>
-                <Link to="/qas?status=rejected">
+                <Link to="/issues?status=rejected">
                   <Button variant="danger" size="sm">
                     Revisar ahora
                   </Button>

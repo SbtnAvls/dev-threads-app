@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import qaService from '../services/qaService'
+import issueService from '../services/issueService'
 
 export function useTimeline(issueId) {
   const [entries, setEntries] = useState([])
@@ -11,7 +11,7 @@ export function useTimeline(issueId) {
     setLoading(true)
     setError(null)
     try {
-      const data = await qaService.getTimeline(issueId)
+      const data = await issueService.getTimeline(issueId)
       setEntries(data.results || data)
     } catch (err) {
       setError(err.message || 'Error loading timeline')
@@ -25,7 +25,7 @@ export function useTimeline(issueId) {
   }, [fetchTimeline])
 
   const addEntry = useCallback(async (data) => {
-    const entry = await qaService.addTimelineEntry(issueId, data)
+    const entry = await issueService.addTimelineEntry(issueId, data)
     await fetchTimeline()
     return entry
   }, [issueId, fetchTimeline])

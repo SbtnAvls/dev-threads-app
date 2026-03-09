@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Mail, Briefcase } from 'lucide-react'
-import { QACard } from '../components/qa'
+import { IssueCard } from '../components/issue'
 import { Button, Avatar, Card } from '../components/ui'
 import { useDeveloperDetail, useDevStats } from '../hooks'
 import { fullName } from '../utils/helpers'
@@ -58,10 +58,10 @@ export function DevDetailPage() {
   const roleName = developer.role?.name || 'developer'
 
   // Issues from the dev stats endpoint
-  const allQAs = stats?.issues || []
-  const filteredQAs = activeTab === 'all'
-    ? allQAs
-    : allQAs.filter(qa => qa.status === activeTab)
+  const allIssues = stats?.issues || []
+  const filteredIssues = activeTab === 'all'
+    ? allIssues
+    : allIssues.filter(issue => issue.status === activeTab)
 
   const getStatValue = (key) => {
     if (!stats) return 0
@@ -118,7 +118,7 @@ export function DevDetailPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mt-6 pt-6 border-t border-border-primary">
-            <StatCard label="Total QAs" value={getStatValue('total')} />
+            <StatCard label="Total Issues" value={getStatValue('total')} />
             <StatCard label="Abiertos" value={getStatValue('open')} color="text-status-open" />
             <StatCard label="En Revision" value={getStatValue('in_review')} color="text-status-in-review" />
             <StatCard label="Aprobados" value={getStatValue('approved')} color="text-status-approved" />
@@ -128,9 +128,9 @@ export function DevDetailPage() {
         )}
       </motion.div>
 
-      {/* QAs section */}
+      {/* Issues section */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-text-primary">QAs Asignados</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Issues Asignados</h2>
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2">
@@ -157,15 +157,15 @@ export function DevDetailPage() {
           })}
         </div>
 
-        {/* QAs list */}
+        {/* Issues list */}
         {statsLoading ? (
           <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-4 border-accent-blue border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : filteredQAs.length === 0 ? (
+        ) : filteredIssues.length === 0 ? (
           <Card>
             <div className="flex flex-col items-center justify-center py-12 text-text-muted">
-              <p className="text-lg">No hay QAs en esta categoria</p>
+              <p className="text-lg">No hay issues en esta categoria</p>
             </div>
           </Card>
         ) : (
@@ -174,8 +174,8 @@ export function DevDetailPage() {
             animate={{ opacity: 1 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-4"
           >
-            {filteredQAs.map((qa, index) => (
-              <QACard key={qa.id} qa={qa} index={index} />
+            {filteredIssues.map((issue, index) => (
+              <IssueCard key={issue.id} issue={issue} index={index} />
             ))}
           </motion.div>
         )}

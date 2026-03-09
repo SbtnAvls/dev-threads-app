@@ -49,8 +49,8 @@ export function Header({ onMenuClick }) {
               <Bug className="w-6 h-6 text-white" />
             </motion.div>
             <div>
-              <h1 className="text-lg font-bold text-text-primary">QA Threads</h1>
-              <p className="text-xs text-text-muted">Gestion de QAs</p>
+              <h1 className="text-lg font-bold text-text-primary">Dev Threads</h1>
+              <p className="text-xs text-text-muted">Gestión de Issues</p>
             </div>
           </Link>
         </div>
@@ -61,7 +61,7 @@ export function Header({ onMenuClick }) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
             <input
               type="text"
-              placeholder="Buscar QAs, desarrolladores..."
+              placeholder="Buscar issues, desarrolladores..."
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-primary bg-bg-secondary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
             />
           </div>

@@ -28,8 +28,8 @@ export function AuthProvider({ children }) {
   // Listen for auth expiration from apiClient
   useEffect(() => {
     const handler = () => setUser(null)
-    window.addEventListener('qa-auth-expired', handler)
-    return () => window.removeEventListener('qa-auth-expired', handler)
+    window.addEventListener('dev-auth-expired', handler)
+    return () => window.removeEventListener('dev-auth-expired', handler)
   }, [])
 
   const login = useCallback(async (email, password) => {

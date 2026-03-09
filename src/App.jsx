@@ -5,8 +5,8 @@ import {
   Dashboard,
   DevelopersPage,
   DevDetailPage,
-  QAsPage,
-  QADetailPage,
+  IssuesPage,
+  IssueDetailPage,
   LoginPage
 } from './pages'
 
@@ -26,8 +26,8 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/developers" element={<DevelopersPage />} />
                 <Route path="/developer/:id" element={<DevDetailPage />} />
-                <Route path="/qas" element={<QAsPage />} />
-                <Route path="/qa/:id" element={<QADetailPage />} />
+                <Route path="/issues" element={<IssuesPage />} />
+                <Route path="/issue/:id" element={<IssueDetailPage />} />
                 <Route path="/settings" element={<ComingSoon title="Configuracion" />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

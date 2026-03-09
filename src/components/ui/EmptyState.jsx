@@ -7,7 +7,7 @@ const icons = {
   default: Inbox,
   search: Search,
   users: Users,
-  qa: Bug,
+  issue: Bug,
   file: FileX,
 }
 
