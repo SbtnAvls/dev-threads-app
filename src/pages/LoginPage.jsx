@@ -1,35 +1,69 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bug, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Bug } from 'lucide-react'
+import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../hooks'
 
 export function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   const from = location.state?.from?.pathname || '/'
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!email.trim() || !password.trim()) return
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const googleToken = credentialResponse.credential
+    if (!googleToken) {
+      setError('No se recibio token de Google')
+      return
+    }
 
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const result = await loginWithGoogle(googleToken)
+
+      switch (result.type) {
+        case 'authenticated':
+          navigate(from, { replace: true })
+          break
+
+        case 'select_org':
+          navigate('/select-org', {
+            state: {
+              organizations: result.organizations,
+              user: result.user,
+              googleToken,
+            },
+            replace: true,
+          })
+          break
+
+        case 'register':
+          navigate('/register', {
+            state: {
+              googleData: result.googleData,
+              googleToken,
+            },
+            replace: true,
+          })
+          break
+
+        default:
+          setError('Respuesta inesperada del servidor')
+      }
     } catch (err) {
-      setError(err.message || 'Credenciales incorrectas')
+      setError(err.message || 'Error al iniciar sesion con Google')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGoogleError = () => {
+    setError('Error al conectar con Google. Intenta de nuevo.')
   }
 
   return (
@@ -53,12 +87,11 @@ export function LoginPage() {
           <p className="text-text-secondary mt-1">Inicia sesion para continuar</p>
         </div>
 
-        {/* Form */}
-        <motion.form
+        {/* Sign-In Card */}
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          onSubmit={handleSubmit}
           className="rounded-2xl border border-border-primary bg-bg-secondary p-6 space-y-5"
         >
           {error && (
@@ -71,78 +104,43 @@ export function LoginPage() {
             </motion.div>
           )}
 
-          {/* Email */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">
-              Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                aria-label="Email"
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
-                autoComplete="email"
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-text-secondary">
-              Contrasena
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                aria-label="Password"
-                data-testid="password-input"
-                className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            type="submit"
-            data-testid="login-submit"
-            name="login-submit"
-            aria-label="Iniciar Sesion"
-            disabled={loading || !email.trim() || !password.trim()}
-            className="w-full py-2.5 rounded-lg bg-accent-blue text-white font-medium text-sm hover:bg-accent-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Ingresando...
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-accent-blue border-t-transparent rounded-full animate-spin" />
+                <span className="text-text-secondary text-sm">Conectando...</span>
               </div>
-            ) : (
-              'Iniciar Sesion'
-            )}
-          </motion.button>
-        </motion.form>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-text-secondary text-sm">
+                Usa tu cuenta de Google para acceder
+              </p>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                size="large"
+                width="320"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </div>
+          )}
+
+          {/* Register link */}
+          <div className="pt-2 border-t border-border-primary text-center">
+            <p className="text-text-muted text-xs">
+              Nueva organizacion?{' '}
+              <Link
+                to="/register"
+                className="text-accent-blue hover:underline"
+              >
+                Registrate aqui
+              </Link>
+            </p>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   )

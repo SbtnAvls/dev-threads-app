@@ -8,6 +8,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Derived state from user profile
+  const organization = user?.membership?.organization || null
+  const membership = user?.membership || null
+  const isOrgAdmin = membership?.role?.permissions?.includes('*') || false
+
   // Check existing session on mount
   useEffect(() => {
     const { access } = getTokens()
@@ -32,8 +37,43 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('dev-auth-expired', handler)
   }, [])
 
-  const login = useCallback(async (email, password) => {
-    const profile = await authService.login(email, password)
+  /**
+   * Google login — handles the 3-way response from the backend.
+   * Returns { type, user?, organizations?, googleData? }
+   */
+  const loginWithGoogle = useCallback(async (googleToken) => {
+    const result = await authService.loginWithGoogle(googleToken)
+
+    if (result.type === 'authenticated') {
+      setUser(result.user)
+    }
+
+    return result
+  }, [])
+
+  /**
+   * Select an org (for multi-org users).
+   */
+  const selectOrg = useCallback(async (googleToken, orgId) => {
+    const profile = await authService.selectOrg(googleToken, orgId)
+    setUser(profile)
+    return profile
+  }, [])
+
+  /**
+   * Register a new organization.
+   */
+  const registerOrg = useCallback(async (googleToken, orgName, orgType) => {
+    const profile = await authService.registerOrg(googleToken, orgName, orgType)
+    setUser(profile)
+    return profile
+  }, [])
+
+  /**
+   * Accept an invitation.
+   */
+  const acceptInvitation = useCallback(async (googleToken, inviteToken) => {
+    const profile = await authService.acceptInvitation(googleToken, inviteToken)
     setUser(profile)
     return profile
   }, [])
@@ -44,11 +84,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const hasPermission = useCallback((permission) => {
-    if (!user?.role?.permissions) return false
-    const perms = user.role.permissions
+    const perms = membership?.role?.permissions
+    if (!perms) return false
     if (perms.includes('*')) return true
     return perms.includes(permission)
-  }, [user])
+  }, [membership])
 
   const refreshProfile = useCallback(async () => {
     const profile = await authService.getProfile()
@@ -60,7 +100,13 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isAuthenticated: !!user,
-    login,
+    organization,
+    membership,
+    isOrgAdmin,
+    loginWithGoogle,
+    selectOrg,
+    registerOrg,
+    acceptInvitation,
     logout,
     hasPermission,
     refreshProfile,

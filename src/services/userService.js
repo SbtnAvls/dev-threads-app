@@ -16,10 +16,6 @@ const userService = {
     return apiClient(`/users/${id}/`)
   },
 
-  async createUser(data) {
-    return apiClient('/users/create/', { method: 'POST', body: data })
-  },
-
   async updateUser(id, data) {
     return apiClient(`/users/${id}/`, { method: 'PATCH', body: data })
   },

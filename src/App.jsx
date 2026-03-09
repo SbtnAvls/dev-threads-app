@@ -7,14 +7,21 @@ import {
   DevDetailPage,
   IssuesPage,
   IssueDetailPage,
-  LoginPage
+  LoginPage,
+  RegisterOrgPage,
+  OrgSelectorPage,
+  OrgSettingsPage,
+  AcceptInvitationPage,
 } from './pages'
 
 function App() {
   return (
     <Routes>
-      {/* Public route */}
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterOrgPage />} />
+      <Route path="/select-org" element={<OrgSelectorPage />} />
+      <Route path="/invite/:token" element={<AcceptInvitationPage />} />
 
       {/* Protected routes */}
       <Route
@@ -28,7 +35,7 @@ function App() {
                 <Route path="/developer/:id" element={<DevDetailPage />} />
                 <Route path="/issues" element={<IssuesPage />} />
                 <Route path="/issue/:id" element={<IssueDetailPage />} />
-                <Route path="/settings" element={<ComingSoon title="Configuracion" />} />
+                <Route path="/settings" element={<OrgSettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
@@ -38,16 +45,5 @@ function App() {
     </Routes>
   )
 }
-
-// Placeholder component for routes not yet implemented
-function ComingSoon({ title }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="text-6xl mb-4">🚧</div>
-      <h1 className="text-2xl font-bold text-text-primary mb-2">{title}</h1>
-      <p className="text-text-secondary">Esta pagina estara disponible pronto</p>
-    </div>
-  )
-}
-
+App.displayName = 'DevThreadsApp'
 export default App

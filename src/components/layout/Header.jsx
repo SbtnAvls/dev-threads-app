@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
-import { Bug, Bell, Search, Menu, LogOut } from 'lucide-react'
+import { Bug, Bell, Search, Menu, LogOut, Building2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Avatar } from '../ui'
 import { useAuth } from '../../hooks'
 import { fullName } from '../../utils/helpers'
 
 export function Header({ onMenuClick }) {
-  const { user, logout } = useAuth()
+  const { user, organization, membership, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -15,7 +15,7 @@ export function Header({ onMenuClick }) {
   }
 
   const userName = user ? fullName(user) : ''
-  const roleName = user?.role?.name || ''
+  const roleName = membership?.role?.name || ''
 
   const roleLabels = {
     admin: 'Administrador',
@@ -50,7 +50,16 @@ export function Header({ onMenuClick }) {
             </motion.div>
             <div>
               <h1 className="text-lg font-bold text-text-primary">Dev Threads</h1>
-              <p className="text-xs text-text-muted">Gestión de Issues</p>
+              {organization ? (
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="w-3 h-3 text-text-muted" />
+                  <p className="text-xs text-text-muted truncate max-w-[150px]">
+                    {organization.name}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-text-muted">Gestion de Issues</p>
+              )}
             </div>
           </Link>
         </div>
