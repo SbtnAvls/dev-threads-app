@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bug, Building2, Briefcase } from 'lucide-react'
+import { Building2, Briefcase } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../hooks'
 
@@ -19,10 +19,12 @@ export function RegisterOrgPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { registerOrg, loginWithGoogle } = useAuth()
+  const [searchParams] = useSearchParams()
 
   // State from login redirect (user already authenticated with Google)
   const googleToken = location.state?.googleToken || null
   const googleData = location.state?.googleData || null
+  const forceCreate = location.state?.forceCreate || searchParams.get('create') === 'true'
 
   const [orgName, setOrgName] = useState('')
   const [orgType, setOrgType] = useState('')
@@ -44,11 +46,29 @@ export function RegisterOrgPage() {
     setError('')
     setLoading(true)
     try {
-      // Check if user already exists
+      if (forceCreate) {
+        // Skip login flow — go straight to org creation form
+        // Decode basic info from Google JWT for the preview
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          setPendingGoogleData({
+            email: payload.email,
+            first_name: payload.given_name || '',
+            last_name: payload.family_name || '',
+            avatar_url: payload.picture || '',
+          })
+        } catch {
+          setPendingGoogleData(null)
+        }
+        setPendingGoogleToken(token)
+        setStep('form')
+        return
+      }
+
+      // Normal flow: Check if user already exists
       const result = await loginWithGoogle(token)
 
       if (result.type === 'authenticated') {
-        // Already has an org — go to dashboard
         navigate('/', { replace: true })
         return
       }
@@ -107,7 +127,7 @@ export function RegisterOrgPage() {
             transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
             className="p-4 rounded-2xl bg-gradient-to-br from-accent-blue to-purple-600 mb-4"
           >
-            <Bug className="w-10 h-10 text-white" />
+            <img src="/devthreads-icon.png" alt="Dev Threads" className="w-12 h-12 object-cover" />
           </motion.div>
           <h1 className="text-2xl font-bold text-text-primary">Dev Threads</h1>
           <p className="text-text-secondary mt-1">Registra tu organizacion</p>

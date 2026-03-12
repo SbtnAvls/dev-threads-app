@@ -5,8 +5,14 @@ export function useIssues(filters = {}) {
   const [issues, setIssues] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const enabled = filters !== null
 
   const fetchIssues = useCallback(async () => {
+    if (!enabled) {
+      setIssues([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -18,7 +24,7 @@ export function useIssues(filters = {}) {
     } finally {
       setLoading(false)
     }
-  }, [JSON.stringify(filters)])
+  }, [JSON.stringify(filters), enabled])
 
   useEffect(() => {
     fetchIssues()

@@ -47,7 +47,7 @@ export function DevDetailPage() {
         <p className="text-text-secondary mb-4">{devError || 'El desarrollador que buscas no existe'}</p>
         <Link to="/developers">
           <Button variant="secondary" icon={ArrowLeft}>
-            Volver a Desarrolladores
+            Volver a Miembros
           </Button>
         </Link>
       </div>
@@ -73,7 +73,7 @@ export function DevDetailPage() {
       {/* Back button */}
       <Link to="/developers" className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
         <ArrowLeft className="w-4 h-4" />
-        <span>Volver a Desarrolladores</span>
+        <span>Volver a Miembros</span>
       </Link>
 
       {/* Profile header */}

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Bug, Tag, X } from 'lucide-react'
+import { Tag, X, Github, Lock, Unlock, Loader2 } from 'lucide-react'
 import { Modal, ModalFooter, Button, Input, Textarea, Select, Avatar } from '../ui'
 import { useDevelopers } from '../../hooks'
 import { fullName } from '../../utils/helpers'
+import githubService from '../../services/githubService'
 
 const priorityOptions = [
   { value: 'low', label: 'Baja' },
@@ -21,25 +22,59 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
   const [priority, setPriority] = useState('medium')
   const [tags, setTags] = useState([])
   const [customTag, setCustomTag] = useState('')
+  const [selectedRepos, setSelectedRepos] = useState(new Set())
+  const [orgRepos, setOrgRepos] = useState([])
+  const [reposLoading, setReposLoading] = useState(false)
+  const [reposError, setReposError] = useState(false)
   const { developers } = useDevelopers()
+
+  // Load org repos when modal opens
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    const loadRepos = async () => {
+      setReposLoading(true)
+      setReposError(false)
+      try {
+        const data = await githubService.getRepos({ active: 'true' })
+        if (!cancelled) setOrgRepos(data.results || data)
+      } catch {
+        if (!cancelled) { setOrgRepos([]); setReposError(true) }
+      } finally {
+        if (!cancelled) setReposLoading(false)
+      }
+    }
+    loadRepos()
+    return () => { cancelled = true }
+  }, [isOpen])
 
   const developerOptions = developers.map(d => ({
     value: String(d.id),
     label: fullName(d),
   }))
 
-  const handleSubmit = () => {
-    if (!title.trim() || !description.trim() || !assignedTo) return
+  const [submitting, setSubmitting] = useState(false)
 
-    onSubmit?.({
-      title: title.trim(),
-      description: description.trim(),
-      assigned_to_id: Number(assignedTo),
-      priority,
-      tags,
-    })
+  const handleSubmit = async () => {
+    if (!title.trim() || !description.trim() || !assignedTo || submitting) return
 
-    handleClose()
+    setSubmitting(true)
+    try {
+      await onSubmit?.({
+        title: title.trim(),
+        description: description.trim(),
+        assigned_to_id: Number(assignedTo),
+        priority,
+        tags,
+        repo_ids: [...selectedRepos],
+      })
+      // Only close/reset on success — parent controls the close
+      handleClose()
+    } catch {
+      // Error handled by parent via toast — keep form open
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleClose = () => {
@@ -49,6 +84,7 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
     setPriority('medium')
     setTags([])
     setCustomTag('')
+    setSelectedRepos(new Set())
     onClose()
   }
 
@@ -58,6 +94,14 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     )
+  }
+
+  const toggleRepo = (repoId) => {
+    setSelectedRepos(prev => {
+      const next = new Set(prev)
+      next.has(repoId) ? next.delete(repoId) : next.add(repoId)
+      return next
+    })
   }
 
   const addCustomTag = () => {
@@ -79,17 +123,6 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
       size="lg"
     >
       <div className="space-y-5">
-        {/* Icon header */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="flex justify-center -mt-2 mb-4"
-        >
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-accent-blue to-purple-600">
-            <Bug className="w-8 h-8 text-white" />
-          </div>
-        </motion.div>
-
         {/* Title */}
         <Input
           label="Titulo"
@@ -123,6 +156,60 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
             onChange={setPriority}
           />
         </div>
+
+        {/* GitHub Repos */}
+        {(orgRepos.length > 0 || reposLoading || reposError) && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-text-secondary flex items-center gap-1.5">
+              <Github className="w-4 h-4" />
+              Repositorios
+              <span className="text-text-muted font-normal">(opcional)</span>
+            </label>
+            {reposLoading ? (
+              <div className="flex items-center gap-2 py-3 text-text-muted">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-xs">Cargando repositorios...</span>
+              </div>
+            ) : reposError ? (
+              <p className="text-xs text-text-muted py-2">
+                No se pudieron cargar los repositorios
+              </p>
+            ) : (
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-border-primary p-1.5 space-y-0.5">
+                {orgRepos.map(repo => (
+                  <label
+                    key={repo.id}
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all ${
+                      selectedRepos.has(repo.id)
+                        ? 'bg-accent-blue/10 border border-accent-blue/20'
+                        : 'hover:bg-bg-elevated border border-transparent'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRepos.has(repo.id)}
+                      onChange={() => toggleRepo(repo.id)}
+                      className="rounded border-border-primary text-accent-blue focus:ring-accent-blue"
+                    />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {repo.private ? (
+                        <Lock className="w-3 h-3 text-text-muted flex-shrink-0" />
+                      ) : (
+                        <Unlock className="w-3 h-3 text-text-muted flex-shrink-0" />
+                      )}
+                      <span className="text-sm text-text-primary truncate">{repo.full_name}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+            {selectedRepos.size > 0 && (
+              <p className="text-xs text-text-muted">
+                {selectedRepos.size} {selectedRepos.size === 1 ? 'repositorio seleccionado' : 'repositorios seleccionados'}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Tags */}
         <div className="space-y-2">
@@ -212,8 +299,8 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
         <Button variant="ghost" onClick={handleClose}>
           Cancelar
         </Button>
-        <Button onClick={handleSubmit} disabled={!isValid}>
-          Crear Issue
+        <Button onClick={handleSubmit} disabled={!isValid || submitting}>
+          {submitting ? 'Creando...' : 'Crear Issue'}
         </Button>
       </ModalFooter>
     </Modal>

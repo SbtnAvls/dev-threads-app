@@ -9,12 +9,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   ExternalLink,
-  GitBranch
+  GitBranch,
+  Github
 } from 'lucide-react'
 import clsx from 'clsx'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Avatar } from '../ui'
+import { RichContent } from '../github'
 import { fullName, parseDate } from '../../utils/helpers'
 
 const typeConfig = {
@@ -76,7 +78,7 @@ const typeConfig = {
   },
 }
 
-export function StatusNode({ entry, index, isLast = false, isFirst = false }) {
+export function StatusNode({ entry, index, isLast = false, isFirst = false, repos = [] }) {
   const config = typeConfig[entry.type] || typeConfig.comment
   const Icon = config.icon
 
@@ -168,13 +170,22 @@ export function StatusNode({ entry, index, isLast = false, isFirst = false }) {
           'hover:border-border-secondary hover:bg-bg-elevated/50'
         )}>
           {/* Main content */}
-          <p className="text-sm text-text-secondary leading-relaxed">
-            {entry.content}
+          <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+            {(entry.type === 'comment' || entry.type === 'commit') && repos.length > 0
+              ? <RichContent text={entry.content} repos={repos} />
+              : entry.content
+            }
           </p>
 
           {/* Commit info */}
           {entry.type === 'commit' && entry.metadata && (
-            <div className="mt-3 p-3 rounded-lg bg-bg-secondary border border-border-primary">
+            <div className="mt-3 p-3 rounded-lg bg-bg-secondary border border-border-primary space-y-2">
+              {entry.metadata.repo_name && (
+                <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                  <Github className="w-3 h-3" />
+                  <span className="font-medium">{entry.metadata.repo_name}</span>
+                </div>
+              )}
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2 text-status-tech-debt">
                   <GitCommit className="w-4 h-4" />

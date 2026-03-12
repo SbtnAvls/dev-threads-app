@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Users, Plus } from 'lucide-react'
 import { DevCard } from '../components/dev'
-import { Button } from '../components/ui'
-import { useDevelopers } from '../hooks'
+import { Button, InviteModal } from '../components/ui'
+import { useDevelopers, useAuth } from '../hooks'
 
 const container = {
   hidden: { opacity: 0 },
@@ -20,24 +21,37 @@ const item = {
 }
 
 export function DevelopersPage() {
-  const { developers, loading } = useDevelopers()
+  const { developers, loading, refetch } = useDevelopers()
+  const { isOrgAdmin, hasPermission } = useAuth()
+  const [showInvite, setShowInvite] = useState(false)
+
+  const canInvite = isOrgAdmin || hasPermission('manage_users')
 
   const countByRole = (roleName) =>
     developers.filter(d => d.role?.name === roleName).length
 
   return (
     <div className="space-y-6">
+      {/* Invite Modal */}
+      <InviteModal
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+        onInvited={refetch}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Desarrolladores</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Miembros</h1>
           <p className="text-text-secondary mt-1">
             Gestiona el equipo y sus issues asignados
           </p>
         </div>
-        <Button icon={Plus} disabled title="Proximamente">
-          Nuevo Desarrollador
-        </Button>
+        {canInvite && (
+          <Button icon={Plus} onClick={() => setShowInvite(true)}>
+            Invitar Miembro
+          </Button>
+        )}
       </div>
 
       {/* Stats bar */}
@@ -56,7 +70,7 @@ export function DevelopersPage() {
           <p className="text-2xl font-bold text-status-approved">
             {countByRole('developer')}
           </p>
-          <p className="text-sm text-text-muted">Desarrolladores</p>
+          <p className="text-sm text-text-muted">Miembros</p>
         </div>
         <div>
           <p className="text-2xl font-bold text-status-in-review">

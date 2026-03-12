@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Users,
   ClipboardList,
+  Zap,
+  BarChart3,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -20,7 +22,7 @@ const navItems = [
     to: '/',
   },
   {
-    label: 'Desarrolladores',
+    label: 'Miembros',
     icon: Users,
     to: '/developers',
   },
@@ -28,6 +30,16 @@ const navItems = [
     label: 'Todos los Issues',
     icon: ClipboardList,
     to: '/issues',
+  },
+  {
+    label: 'Sprints',
+    icon: Zap,
+    to: '/sprints',
+  },
+  {
+    label: 'Metricas',
+    icon: BarChart3,
+    to: '/metrics',
   },
 ]
 
@@ -70,13 +82,12 @@ export function Sidebar({ isOpen, onClose }) {
       )}
 
       {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ x: isOpen ? 0 : '-100%' }}
+      <aside
         className={clsx(
           'fixed top-0 left-0 z-50 h-full w-64 border-r border-border-primary bg-bg-secondary',
+          'transition-transform duration-300 ease-in-out',
           'lg:relative lg:translate-x-0 lg:z-auto',
-          'transition-transform duration-300 ease-in-out'
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="flex flex-col h-full">
@@ -156,7 +167,7 @@ export function Sidebar({ isOpen, onClose }) {
             </div>
           )}
         </div>
-      </motion.aside>
+      </aside>
     </>
   )
 }

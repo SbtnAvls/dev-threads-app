@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bug, Building2, ChevronRight } from 'lucide-react'
+import { Building2, ChevronRight, Plus } from 'lucide-react'
 import { useAuth } from '../hooks'
 
 export function OrgSelectorPage() {
@@ -48,7 +48,7 @@ export function OrgSelectorPage() {
             transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
             className="p-4 rounded-2xl bg-gradient-to-br from-accent-blue to-purple-600 mb-4"
           >
-            <Bug className="w-10 h-10 text-white" />
+            <img src="/devthreads-icon.png" alt="Dev Threads" className="w-12 h-12 object-cover" />
           </motion.div>
           <h1 className="text-2xl font-bold text-text-primary">Dev Threads</h1>
           <p className="text-text-secondary mt-1">Selecciona tu organizacion</p>
@@ -123,6 +123,33 @@ export function OrgSelectorPage() {
                 )}
               </motion.button>
             ))}
+          </div>
+
+          {/* Create new org */}
+          <div className="pt-3 border-t border-border-primary">
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              onClick={() => navigate('/register', {
+                state: { googleToken, forceCreate: true },
+              })}
+              disabled={loadingOrgId !== null}
+              className="w-full flex items-center gap-3 p-4 rounded-xl border border-dashed border-border-primary bg-bg-primary hover:border-accent-blue hover:bg-accent-blue/5 disabled:opacity-50 transition-all text-left group"
+            >
+              <div className="p-2 rounded-lg bg-status-approved/10 text-status-approved">
+                <Plus className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-text-primary">
+                  Crear nueva organizacion
+                </p>
+                <p className="text-xs text-text-muted">
+                  Registra una organizacion propia
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-accent-blue transition-colors" />
+            </motion.button>
           </div>
         </motion.div>
       </motion.div>

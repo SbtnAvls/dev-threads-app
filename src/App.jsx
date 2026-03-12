@@ -7,6 +7,9 @@ import {
   DevDetailPage,
   IssuesPage,
   IssueDetailPage,
+  SprintsPage,
+  SprintDetailPage,
+  MetricsPage,
   LoginPage,
   RegisterOrgPage,
   OrgSelectorPage,
@@ -35,6 +38,9 @@ function App() {
                 <Route path="/developer/:id" element={<DevDetailPage />} />
                 <Route path="/issues" element={<IssuesPage />} />
                 <Route path="/issue/:id" element={<IssueDetailPage />} />
+                <Route path="/sprints" element={<SprintsPage />} />
+                <Route path="/sprint/:id" element={<SprintDetailPage />} />
+                <Route path="/metrics" element={<MetricsPage />} />
                 <Route path="/settings" element={<OrgSettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

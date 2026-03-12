@@ -131,7 +131,7 @@ export function Dashboard() {
           <Card padding="none">
             <div className="p-4 border-b border-border-primary">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-text-primary">Desarrolladores</h2>
+                <h2 className="font-semibold text-text-primary">Miembros</h2>
                 <Link to="/developers">
                   <Button variant="ghost" size="sm" icon={ArrowRight} iconPosition="right">
                     Ver todos

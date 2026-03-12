@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Clock } from 'lucide-react'
 import { StatusNode } from './StatusNode'
 
-export function Timeline({ entries = [], className }) {
+export function Timeline({ entries = [], repos = [], className }) {
   if (!entries || entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-text-muted">
@@ -28,15 +28,16 @@ export function Timeline({ entries = [], className }) {
         </span>
       </div>
 
-      {/* Timeline entries */}
+      {/* Timeline entries (newest first) */}
       <div className="relative">
-        {entries.map((entry, index) => (
+        {[...entries].reverse().map((entry, index, arr) => (
           <StatusNode
             key={entry.id}
             entry={entry}
             index={index}
             isFirst={index === 0}
-            isLast={index === entries.length - 1}
+            isLast={index === arr.length - 1}
+            repos={repos}
           />
         ))}
       </div>

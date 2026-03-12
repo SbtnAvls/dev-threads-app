@@ -13,7 +13,7 @@ export function Layout({ children }) {
       <div className="flex">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main className="flex-1 min-h-[calc(100vh-73px)]">
+        <main className="flex-1 min-w-0 overflow-x-hidden min-h-[calc(100vh-73px)]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

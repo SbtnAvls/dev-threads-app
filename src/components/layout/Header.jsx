@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
-import { Bug, Bell, Search, Menu, LogOut, Building2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bell, Search, Menu, LogOut, Building2, ChevronDown, RefreshCw, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Avatar } from '../ui'
 import { useAuth } from '../../hooks'
@@ -8,10 +9,37 @@ import { fullName } from '../../utils/helpers'
 export function Header({ onMenuClick }) {
   const { user, organization, membership, logout } = useAuth()
   const navigate = useNavigate()
+  const [showOrgMenu, setShowOrgMenu] = useState(false)
+  const orgMenuRef = useRef(null)
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (orgMenuRef.current && !orgMenuRef.current.contains(e.target)) {
+        setShowOrgMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const handleSwitchOrg = () => {
+    setShowOrgMenu(false)
+    logout()
+    // Use window.location to ensure clean navigation after logout
+    window.location.href = '/login'
+  }
+
+  const handleCreateOrg = () => {
+    setShowOrgMenu(false)
+    logout()
+    // Use window.location with a flag in URL to survive the redirect
+    window.location.href = '/register?create=true'
   }
 
   const userName = user ? fullName(user) : ''
@@ -43,19 +71,65 @@ export function Header({ onMenuClick }) {
 
           <Link to="/" className="flex items-center gap-3">
             <motion.div
-              whileHover={{ rotate: 15 }}
-              className="p-2 rounded-xl bg-gradient-to-br from-accent-blue to-purple-600"
+              whileHover={{ scale: 1.05 }}
+              className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0"
             >
-              <Bug className="w-6 h-6 text-white" />
+              <img src="/devthreads-icon.png" alt="Dev Threads" className="w-full h-full object-cover" />
             </motion.div>
             <div>
               <h1 className="text-lg font-bold text-text-primary">Dev Threads</h1>
               {organization ? (
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="w-3 h-3 text-text-muted" />
-                  <p className="text-xs text-text-muted truncate max-w-[150px]">
-                    {organization.name}
-                  </p>
+                <div className="relative" ref={orgMenuRef}>
+                  <button
+                    onClick={(e) => { e.preventDefault(); setShowOrgMenu(!showOrgMenu) }}
+                    className="flex items-center gap-1.5 hover:bg-bg-elevated rounded px-1 -ml-1 py-0.5 transition-colors"
+                  >
+                    <Building2 className="w-3 h-3 text-text-muted" />
+                    <p className="text-xs text-text-muted truncate max-w-[150px]">
+                      {organization.name}
+                    </p>
+                    <ChevronDown className="w-3 h-3 text-text-muted" />
+                  </button>
+
+                  <AnimatePresence>
+                    {showOrgMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-border-primary bg-bg-secondary shadow-xl z-50 overflow-hidden"
+                      >
+                        {/* Current org info */}
+                        <div className="px-4 py-3 border-b border-border-primary">
+                          <p className="text-xs text-text-muted">Organizacion actual</p>
+                          <p className="text-sm font-medium text-text-primary truncate">{organization.name}</p>
+                        </div>
+                        <div className="py-1">
+                          <button
+                            onClick={handleSwitchOrg}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors text-left"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            <div>
+                              <p>Cambiar organizacion</p>
+                              <p className="text-xs text-text-muted">Inicia sesion en otra org</p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={handleCreateOrg}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors text-left"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <div>
+                              <p>Crear nueva organizacion</p>
+                              <p className="text-xs text-text-muted">Registra tu propia org</p>
+                            </div>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <p className="text-xs text-text-muted">Gestion de Issues</p>

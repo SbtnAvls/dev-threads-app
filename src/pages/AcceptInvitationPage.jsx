@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bug, Mail, CheckCircle2, XCircle } from 'lucide-react'
+import { Mail, CheckCircle2, XCircle } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../hooks'
 
@@ -49,7 +49,7 @@ export function AcceptInvitationPage() {
             transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
             className="p-4 rounded-2xl bg-gradient-to-br from-accent-blue to-purple-600 mb-4"
           >
-            <Bug className="w-10 h-10 text-white" />
+            <img src="/devthreads-icon.png" alt="Dev Threads" className="w-12 h-12 object-cover" />
           </motion.div>
           <h1 className="text-2xl font-bold text-text-primary">Dev Threads</h1>
           <p className="text-text-secondary mt-1">Aceptar Invitacion</p>
