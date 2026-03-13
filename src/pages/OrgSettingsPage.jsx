@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Building2, Users, Mail, Shield, Save, Plus, Trash2,
   Copy, Check, X, RefreshCw, UserMinus, UserPlus,
   Github, ExternalLink, Eye, EyeOff, Lock, Unlock,
   GitBranch, AlertCircle, CheckCircle, Loader2,
-  Layers, Pencil,
+  Layers, Pencil, Sparkles, Settings,
 } from 'lucide-react'
 import { useAuth } from '../hooks'
 import { Button, Badge, Modal, ModalFooter } from '../components/ui'
@@ -19,6 +19,7 @@ const TABS = [
   { id: 'roles', label: 'Roles', icon: Shield },
   { id: 'complexity', label: 'Complejidad', icon: Layers },
   { id: 'github', label: 'GitHub', icon: Github },
+  { id: 'ai', label: 'AI', icon: Sparkles },
 ]
 
 const AVAILABLE_PERMISSIONS = [
@@ -92,6 +93,7 @@ export function OrgSettingsPage() {
         {activeTab === 'roles' && <RolesTab isAdmin={isOrgAdmin} />}
         {activeTab === 'complexity' && <ComplexityTab isAdmin={isOrgAdmin} />}
         {activeTab === 'github' && <GitHubTab canManage={isOrgAdmin || hasPermission('manage_repos')} />}
+        {activeTab === 'ai' && <GeminiTab isAdmin={isOrgAdmin} />}
       </motion.div>
     </div>
   )
@@ -1758,6 +1760,347 @@ function AddReposModal({ connection, onClose, onAdded }) {
         </ModalFooter>
       </div>
     </Modal>
+  )
+}
+
+// ─── AI / Gemini Tab ────────────────────────────────────────────────────────
+
+const MESSAGE_TIMEOUT = 3000
+
+const GEMINI_MODELS = [
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+]
+
+const MAX_CHARS_OPTIONS = [
+  { value: 500, label: '500' },
+  { value: 1000, label: '1,000' },
+  { value: 2000, label: '2,000' },
+  { value: 3000, label: '3,000' },
+  { value: 5000, label: '5,000' },
+]
+
+function GeminiTab({ isAdmin }) {
+  const [hasToken, setHasToken] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [token, setToken] = useState('')
+  const [showToken, setShowToken] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [savingDefaults, setSavingDefaults] = useState(false)
+  const [message, setMessage] = useState('')
+  const [defaultModel, setDefaultModel] = useState('gemini-2.0-flash')
+  const [defaultMaxChars, setDefaultMaxChars] = useState(2000)
+  const messageTimerRef = useRef(null)
+
+  const busy = saving || deleting || savingDefaults
+
+  const showMessage = useCallback((text) => {
+    if (messageTimerRef.current) clearTimeout(messageTimerRef.current)
+    setMessage(text)
+    messageTimerRef.current = setTimeout(() => setMessage(''), MESSAGE_TIMEOUT)
+  }, [])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (messageTimerRef.current) clearTimeout(messageTimerRef.current)
+    }
+  }, [])
+
+  const loadStatus = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await orgService.getGeminiTokenStatus()
+      setHasToken(data.has_token)
+      if (data.default_model) setDefaultModel(data.default_model)
+      if (data.default_max_chars) setDefaultMaxChars(data.default_max_chars)
+    } catch (err) {
+      setError(err.message || 'Error al cargar estado del token')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadStatus() }, [loadStatus])
+
+  const handleSave = async () => {
+    if (!token.trim() || token.trim().length < 20) return
+    setSaving(true)
+    setMessage('')
+    setError(null)
+    try {
+      const data = await orgService.setGeminiToken(token.trim())
+      setHasToken(data.has_token)
+      setToken('')
+      showMessage('Token guardado correctamente')
+    } catch (err) {
+      setError(err.message || 'Error al guardar token')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Eliminar el token de Gemini? Los resumenes AI dejaran de funcionar hasta que configures uno nuevo.')) return
+    setDeleting(true)
+    setMessage('')
+    setError(null)
+    try {
+      await orgService.deleteGeminiToken()
+      setHasToken(false)
+      showMessage('Token eliminado')
+    } catch (err) {
+      setError(err.message || 'Error al eliminar token')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleSaveDefaults = async () => {
+    setSavingDefaults(true)
+    setMessage('')
+    setError(null)
+    try {
+      await orgService.updateGeminiSettings({
+        default_model: defaultModel,
+        default_max_chars: defaultMaxChars,
+      })
+      showMessage('Valores por defecto guardados')
+    } catch (err) {
+      setError(err.message || 'Error al guardar valores por defecto')
+    } finally {
+      setSavingDefaults(false)
+    }
+  }
+
+  const isTokenValid = token.trim().length >= 20
+
+  if (loading) return <LoadingSpinner />
+  if (error && hasToken === null) return <ErrorMessage message={error} onRetry={loadStatus} />
+
+  return (
+    <div className="space-y-6">
+      {/* Main config section */}
+      <div className="rounded-xl border border-border-primary bg-bg-secondary p-6 space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              Token de Gemini AI
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Configura tu API key de Google Gemini para generar resumenes automaticos de sprints.
+            </p>
+          </div>
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+            hasToken
+              ? 'bg-status-approved/20 text-status-approved'
+              : 'bg-text-muted/20 text-text-muted'
+          }`}>
+            {hasToken ? (
+              <><CheckCircle className="w-3 h-3" /> Configurado</>
+            ) : (
+              <><AlertCircle className="w-3 h-3" /> Sin configurar</>
+            )}
+          </div>
+        </div>
+
+        {isAdmin ? (
+          <div className="space-y-4">
+            {/* Token input */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                {hasToken ? 'Actualizar token' : 'API Key'}
+              </label>
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  placeholder={hasToken ? 'Ingresa nuevo token para reemplazar el actual' : 'AIzaSy...'}
+                  autoComplete="one-time-code"
+                  className="w-full px-4 py-2.5 pr-10 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary font-mono focus:outline-none focus:border-accent-blue transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(!showToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                >
+                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="p-3 rounded-lg bg-status-rejected/10 border border-status-rejected/20 text-status-rejected text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Validation hint */}
+            {token.trim().length > 0 && !isTokenValid && (
+              <p className="text-xs text-text-muted">El token debe tener al menos 20 caracteres.</p>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                icon={saving ? Loader2 : Save}
+                onClick={handleSave}
+                disabled={busy || !isTokenValid}
+              >
+                {saving ? 'Guardando...' : hasToken ? 'Actualizar Token' : 'Guardar Token'}
+              </Button>
+              {hasToken && (
+                <Button
+                  variant="danger"
+                  icon={deleting ? Loader2 : Trash2}
+                  onClick={handleDelete}
+                  disabled={busy}
+                >
+                  {deleting ? 'Eliminando...' : 'Eliminar Token'}
+                </Button>
+              )}
+              {message && (
+                <span className="text-sm text-status-approved flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {message}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 rounded-lg bg-bg-elevated border border-border-primary">
+            <p className="text-sm text-text-muted">
+              Solo los administradores de la organizacion pueden gestionar el token de Gemini.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Default settings section */}
+      {hasToken && isAdmin && (
+        <div className="rounded-xl border border-border-primary bg-bg-secondary p-6 space-y-5">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Settings className="w-4 h-4 text-purple-400" />
+              Valores por defecto
+            </h3>
+            <p className="text-xs text-text-muted mt-1">
+              Configura el modelo y cantidad de caracteres por defecto para los resumenes AI de sprints.
+              Estos valores se usaran como predeterminados al generar nuevos resumenes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                Modelo por defecto
+              </label>
+              <select
+                value={defaultModel}
+                onChange={e => setDefaultModel(e.target.value)}
+                disabled={busy}
+                className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+              >
+                {GEMINI_MODELS.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                Max caracteres por defecto
+              </label>
+              <select
+                value={defaultMaxChars}
+                onChange={e => setDefaultMaxChars(Number(e.target.value))}
+                disabled={busy}
+                className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+              >
+                {MAX_CHARS_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              icon={savingDefaults ? Loader2 : Save}
+              onClick={handleSaveDefaults}
+              disabled={busy}
+            >
+              {savingDefaults ? 'Guardando...' : 'Guardar Defaults'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Info section */}
+      <div className="rounded-xl border border-border-primary bg-bg-secondary p-6 space-y-4">
+        <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Informacion</h4>
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10 shrink-0">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">Resumenes de Sprint con AI</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                Genera automaticamente resumenes del estado de tus sprints usando Google Gemini.
+                Incluye analisis de progreso, issues pendientes, y recomendaciones.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-status-approved/10 shrink-0">
+              <Lock className="w-4 h-4 text-status-approved" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">Almacenamiento seguro</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                El token se almacena encriptado con Fernet y nunca se expone en la interfaz.
+                Solo se usa en el servidor al momento de generar resumenes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-accent-blue/10 shrink-0">
+              <ExternalLink className="w-4 h-4 text-accent-blue" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">Obtener API Key</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                Puedes obtener una API key gratuita desde Google AI Studio.
+                El plan gratuito incluye suficientes requests para equipos pequenos.
+              </p>
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-1.5 text-xs text-accent-blue hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Ir a Google AI Studio
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

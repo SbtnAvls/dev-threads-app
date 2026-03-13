@@ -1,14 +1,22 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
   Calendar,
+  ChevronDown,
   Pencil,
   Plus,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { SprintFormModal, SprintIssueList, AssignIssueModal } from '../components/sprint'
+import {
+  SprintFormModal,
+  SprintIssueList,
+  AssignIssueModal,
+  SprintAISummary,
+  SprintMetrics,
+  SprintRepositories,
+} from '../components/sprint'
 import { statusConfig, formatSprintDate } from '../components/sprint/sprintConstants'
 import { Button, Card, useToast } from '../components/ui'
 import { useSprintDetail, useIssues } from '../hooks'
@@ -22,11 +30,25 @@ export function SprintDetailPage() {
   const { issues, loading: issuesLoading, refetch: refetchIssues } = useIssues({ sprint: id })
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const statusMenuRef = useRef(null)
   const { hasPermission } = useAuth()
   const toast = useToast()
 
   const canManage = hasPermission('manage_sprints')
   const canAssign = hasPermission('assign_sprint')
+
+  // Close status menu on click outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) {
+        setShowStatusMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleUpdate = async (data) => {
     try {
@@ -38,6 +60,23 @@ export function SprintDetailPage() {
       throw err
     }
   }
+
+  const handleStatusChange = useCallback(async (newStatus) => {
+    if (newStatus === sprint?.status) {
+      setShowStatusMenu(false)
+      return
+    }
+    setUpdatingStatus(true)
+    setShowStatusMenu(false)
+    try {
+      await updateSprint({ status: newStatus })
+      toast.success(`Sprint cambiado a "${statusConfig[newStatus]?.label || newStatus}"`)
+    } catch (err) {
+      toast.error(err.message || 'Error al cambiar el estado')
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }, [sprint?.status, updateSprint, toast])
 
   const handleAssignIssues = useCallback(async (issueIds) => {
     try {
@@ -72,7 +111,7 @@ export function SprintDetailPage() {
   if (error || !sprint) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="text-6xl mb-4">🔍</div>
+        <div className="text-6xl mb-4">???</div>
         <h1 className="text-2xl font-bold text-text-primary mb-2">Sprint no encontrado</h1>
         <p className="text-text-secondary mb-4">{error || 'El sprint que buscas no existe'}</p>
         <Link to="/sprints">
@@ -113,7 +152,7 @@ export function SprintDetailPage() {
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Sprint details and issues */}
+        {/* Left column - Sprint details, AI summary, and issues */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header card */}
           <motion.div
@@ -134,17 +173,52 @@ export function SprintDetailPage() {
             <div className="flex items-start justify-between gap-4 mb-4 relative">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <motion.span
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={clsx(
-                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
-                      config.bg, config.text, config.border
-                    )}
-                  >
-                    <span className={clsx('w-2 h-2 rounded-full', config.dot, sprint.status === 'active' && 'animate-pulse')} />
-                    {config.label}
-                  </motion.span>
+                  <div className="relative" ref={statusMenuRef}>
+                    <motion.button
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      onClick={() => canManage && setShowStatusMenu(!showStatusMenu)}
+                      disabled={updatingStatus}
+                      className={clsx(
+                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                        config.bg, config.text, config.border,
+                        canManage && 'cursor-pointer hover:brightness-125',
+                        updatingStatus && 'opacity-60'
+                      )}
+                    >
+                      <span className={clsx('w-2 h-2 rounded-full', config.dot, sprint.status === 'active' && 'animate-pulse')} />
+                      {updatingStatus ? 'Cambiando...' : config.label}
+                      {canManage && <ChevronDown className={clsx('w-3 h-3 transition-transform', showStatusMenu && 'rotate-180')} />}
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {showStatusMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                          transition={{ duration: 0.12 }}
+                          className="absolute top-full left-0 mt-1.5 w-44 rounded-xl border border-border-primary bg-bg-secondary shadow-xl z-50 overflow-hidden"
+                        >
+                          {Object.entries(statusConfig).map(([key, cfg]) => (
+                            <button
+                              key={key}
+                              onClick={() => handleStatusChange(key)}
+                              className={clsx(
+                                'w-full flex items-center gap-2.5 px-3 py-2.5 text-xs transition-colors text-left',
+                                key === sprint.status
+                                  ? 'bg-bg-elevated text-text-primary font-medium'
+                                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+                              )}
+                            >
+                              <span className={clsx('w-2 h-2 rounded-full', cfg.dot)} />
+                              {cfg.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
                 <h1 className="text-2xl font-bold text-text-primary">
                   {sprint.name}
@@ -196,6 +270,13 @@ export function SprintDetailPage() {
               canManage={canAssign}
             />
           </motion.div>
+
+          {/* AI Summary */}
+          <SprintAISummary
+            sprintId={sprint.id}
+            aiSummary={sprint.ai_summary}
+            canGenerate={canManage}
+          />
         </div>
 
         {/* Right column - Sidebar */}
@@ -207,7 +288,7 @@ export function SprintDetailPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card>
+              <Card hover={false}>
                 <h3 className="text-sm font-medium text-text-muted mb-3">Fechas</h3>
                 <div className="space-y-3">
                   {sprint.start_date && (
@@ -248,7 +329,7 @@ export function SprintDetailPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15 }}
             >
-              <Card>
+              <Card hover={false}>
                 <h3 className="text-sm font-medium text-text-muted mb-3">Creado por</h3>
                 <Link
                   to={`/developer/${sprint.created_by.id}`}
@@ -266,43 +347,15 @@ export function SprintDetailPage() {
             </motion.div>
           )}
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <h3 className="text-sm font-medium text-text-muted mb-3">Estadisticas</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <StatBox label="Total Issues" value={issues.length} />
-                <StatBox label="Abiertos" value={issues.filter(i => i.status === 'open').length} />
-                <StatBox label="En Revision" value={issues.filter(i => i.status === 'in_review').length} />
-                <StatBox label="Aprobados" value={issues.filter(i => i.status === 'approved').length} />
-              </div>
-            </Card>
-          </motion.div>
+          {/* Metrics */}
+          <SprintMetrics sprint={sprint} />
+
+          {/* Repositories */}
+          {sprint.repositories && sprint.repositories.length > 0 && (
+            <SprintRepositories repositories={sprint.repositories} />
+          )}
         </div>
       </div>
     </div>
-  )
-}
-
-function StatBox({ label, value }) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className="p-3 rounded-lg bg-bg-elevated text-center cursor-default"
-    >
-      <motion.p
-        key={value}
-        initial={{ scale: 1.2, color: 'var(--color-accent-blue)' }}
-        animate={{ scale: 1, color: 'var(--color-text-primary)' }}
-        className="text-2xl font-bold"
-      >
-        {value}
-      </motion.p>
-      <p className="text-xs text-text-muted">{label}</p>
-    </motion.div>
   )
 }

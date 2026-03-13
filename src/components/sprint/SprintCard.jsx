@@ -3,15 +3,129 @@ import { Link } from 'react-router-dom'
 import {
   Calendar,
   ChevronRight,
-  ClipboardList,
+  Clock,
   Pencil,
   Trash2,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { statusConfig, formatSprintDate } from './sprintConstants'
+import { Avatar } from '../ui'
+import { fullName } from '../../utils/helpers'
+import {
+  statusConfig,
+  issueStatusConfig,
+  priorityConfig,
+  formatSprintDate,
+  formatDuration,
+  getDaysUrgency,
+} from './sprintConstants'
 
+/* ------------------------------------------------------------------ */
+/*  Issue preview row (compact single-line item inside sprint card)   */
+/* ------------------------------------------------------------------ */
+function IssuePreviewRow({ issue }) {
+  const stCfg = issueStatusConfig[issue.status] || issueStatusConfig.open
+  const prCfg = priorityConfig[issue.priority] || priorityConfig.medium
+  const name = fullName(issue.assigned_to)
+
+  return (
+    <div className="flex items-center gap-2 py-1 min-w-0">
+      {/* Status dot */}
+      <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', stCfg.dot)} />
+
+      {/* Title */}
+      <span className="text-xs text-text-secondary truncate flex-1 min-w-0">
+        {issue.title}
+      </span>
+
+      {/* Priority mini-badge */}
+      <span className={clsx('text-[10px] font-medium shrink-0', prCfg.text)}>
+        {prCfg.label}
+      </span>
+
+      {/* Assigned avatar */}
+      {issue.assigned_to && (
+        <Avatar
+          name={name}
+          src={issue.assigned_to.avatar_url}
+          size="xs"
+          className="shrink-0"
+        />
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Status count mini-badges row                                       */
+/* ------------------------------------------------------------------ */
+function StatusCounts({ counts, issueCount }) {
+  if (!counts || issueCount === 0) return null
+
+  // Only show statuses with count > 0
+  const entries = Object.entries(issueStatusConfig).filter(
+    ([key]) => (counts[key] || 0) > 0
+  )
+  if (entries.length === 0) return null
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {entries.map(([key, cfg]) => (
+        <span
+          key={key}
+          className={clsx(
+            'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium',
+            cfg.bg,
+            cfg.text
+          )}
+          title={cfg.label}
+        >
+          <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+          {counts[key]}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Progress bar                                                       */
+/* ------------------------------------------------------------------ */
+function ProgressBar({ percentage }) {
+  const clamped = Math.min(Math.max(percentage, 0), 100)
+  return (
+    <div
+      className="w-full h-1.5 bg-bg-elevated rounded-full overflow-hidden"
+      role="progressbar"
+      aria-valuenow={clamped}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Progreso del sprint: ${clamped}%`}
+    >
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${clamped}%` }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className={clsx(
+          'h-full rounded-full',
+          clamped >= 80 ? 'bg-status-approved'
+            : clamped >= 40 ? 'bg-status-in-review'
+            : clamped > 0 ? 'bg-accent-blue'
+            : 'bg-transparent'
+        )}
+      />
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main SprintCard                                                    */
+/* ------------------------------------------------------------------ */
 export function SprintCard({ sprint, index = 0, onEdit, onDelete }) {
   const config = statusConfig[sprint.status] || statusConfig.planning
+  const progress = Math.min(sprint.progress_percentage ?? 0, 100)
+  const issueCount = sprint.issue_count ?? 0
+  const preview = sprint.issues_preview || []
+  const moreCount = issueCount - preview.length
 
   return (
     <motion.div
@@ -43,7 +157,7 @@ export function SprintCard({ sprint, index = 0, onEdit, onDelete }) {
               {sprint.name}
             </h3>
             {sprint.description && (
-              <p className="text-sm text-text-secondary line-clamp-2 mt-1">
+              <p className="text-sm text-text-secondary line-clamp-1 mt-0.5">
                 {sprint.description}
               </p>
             )}
@@ -52,7 +166,7 @@ export function SprintCard({ sprint, index = 0, onEdit, onDelete }) {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className={clsx(
-              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
+              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border shrink-0',
               config.bg, config.text, config.border
             )}
           >
@@ -61,33 +175,82 @@ export function SprintCard({ sprint, index = 0, onEdit, onDelete }) {
           </motion.span>
         </div>
 
-        {/* Meta row */}
-        <div className="flex items-center justify-between pt-3 border-t border-border-primary">
-          <div className="flex items-center gap-4 text-sm text-text-secondary">
-            {/* Dates */}
-            {(sprint.start_date || sprint.end_date) && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-text-muted" />
-                <span className="text-xs">
-                  {formatSprintDate(sprint.start_date) || '—'}
-                  {' → '}
-                  {formatSprintDate(sprint.end_date) || '—'}
-                </span>
-              </div>
-            )}
-
-            {/* Issue count */}
-            <div className="flex items-center gap-1.5">
-              <ClipboardList className="w-3.5 h-3.5 text-text-muted" />
-              <span className="text-xs">
-                {sprint.issue_count ?? 0} issue{(sprint.issue_count ?? 0) !== 1 ? 's' : ''}
+        {/* Progress bar + percentage */}
+        {issueCount > 0 && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <StatusCounts counts={sprint.status_counts} issueCount={issueCount} />
+              <span className="text-[10px] text-text-muted font-medium shrink-0 ml-2">
+                {progress}%
               </span>
             </div>
+            <ProgressBar percentage={progress} />
           </div>
+        )}
 
-          <div className="flex items-center gap-1">
-            <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* Time info row */}
+        <div className="flex items-center gap-3 text-xs text-text-secondary mb-3">
+          {/* Dates */}
+          {(sprint.start_date || sprint.end_date) && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-text-muted" />
+              <span>
+                {formatSprintDate(sprint.start_date) || '--'}
+                {' - '}
+                {formatSprintDate(sprint.end_date) || '--'}
+              </span>
+            </div>
+          )}
+
+          {/* Duration */}
+          {sprint.total_days != null && (
+            <span className="text-text-muted">
+              {formatDuration(sprint.total_days, sprint.total_weeks)}
+            </span>
+          )}
+
+          {/* Days remaining */}
+          {sprint.days_remaining != null && sprint.status !== 'completed' && sprint.status !== 'cancelled' && (
+            <div className={clsx('flex items-center gap-1 font-medium', getDaysUrgency(sprint.days_remaining))}>
+              <Clock className="w-3 h-3" />
+              <span>
+                {sprint.days_remaining < 0
+                  ? `Vencido hace ${Math.abs(sprint.days_remaining)}d`
+                  : sprint.days_remaining === 0
+                    ? 'Vence hoy'
+                    : `${sprint.days_remaining}d restantes`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Issues preview */}
+        {preview.length > 0 && (
+          <div className="border-t border-border-primary pt-2">
+            <div className="space-y-0">
+              {preview.map((issue) => (
+                <IssuePreviewRow key={issue.id} issue={issue} />
+              ))}
+            </div>
+            {moreCount > 0 && (
+              <p className="text-[10px] text-text-muted mt-1">
+                +{moreCount} mas
+              </p>
+            )}
           </div>
+        )}
+
+        {/* Bottom meta row */}
+        <div className="flex items-center justify-between pt-2 border-t border-border-primary mt-2">
+          <span className="text-xs text-text-muted">
+            {issueCount} issue{issueCount !== 1 ? 's' : ''}
+            {sprint.working_days_remaining != null && sprint.days_remaining !== sprint.working_days_remaining && (
+              <span className="ml-2 text-text-muted">
+                ({sprint.working_days_remaining}d laborables)
+              </span>
+            )}
+          </span>
+          <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </Link>
 

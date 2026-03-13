@@ -145,7 +145,7 @@ export function Header({ onMenuClick }) {
             <input
               type="text"
               placeholder="Buscar issues, desarrolladores..."
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-primary bg-bg-secondary text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 transition-all"
             />
           </div>
         </div>

@@ -41,6 +41,21 @@ const sprintService = {
       body: { issue_ids: issueIds },
     })
   },
+
+  // AI Summary
+  async getAISummary(sprintId) {
+    return apiClient(`/sprints/${sprintId}/ai-summary/`)
+  },
+
+  async regenerateAISummary(sprintId, { model, max_chars } = {}) {
+    const body = {}
+    if (model) body.model = model
+    if (max_chars != null) body.max_chars = max_chars
+    return apiClient(`/sprints/${sprintId}/ai-summary/`, {
+      method: 'POST',
+      body: Object.keys(body).length > 0 ? body : undefined,
+    })
+  },
 }
 
 export default sprintService

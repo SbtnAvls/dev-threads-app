@@ -65,6 +65,23 @@ const orgService = {
   async updateMember(membershipId, data) {
     return apiClient(`/org/members/${membershipId}/`, { method: 'PATCH', body: data })
   },
+
+  // --- Gemini AI Token ---
+  async getGeminiTokenStatus() {
+    return apiClient('/org/gemini-token/')
+  },
+
+  async setGeminiToken(token) {
+    return apiClient('/org/gemini-token/', { method: 'PUT', body: { token } })
+  },
+
+  async deleteGeminiToken() {
+    return apiClient('/org/gemini-token/', { method: 'DELETE' })
+  },
+
+  async updateGeminiSettings(settings) {
+    return apiClient('/org/gemini-token/', { method: 'PATCH', body: settings })
+  },
 }
 
 export default orgService

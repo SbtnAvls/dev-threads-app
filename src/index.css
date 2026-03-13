@@ -45,12 +45,30 @@
 }
 
 /* Base styles */
+html {
+  color-scheme: dark;
+}
+
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   min-height: 100vh;
+}
+
+/* Force dark backgrounds on all form inputs */
+input, textarea, select {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px var(--color-bg-elevated) inset !important;
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  caret-color: var(--color-text-primary);
 }
 
 #root {

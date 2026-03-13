@@ -37,10 +37,52 @@ export const statusConfig = {
   },
 }
 
+// Issue status config for mini-badges and preview dots
+export const issueStatusConfig = {
+  open:      { label: 'Abierto',       dot: 'bg-status-open',      text: 'text-status-open',      bg: 'bg-status-open/20' },
+  in_review: { label: 'En Revision',   dot: 'bg-status-in-review', text: 'text-status-in-review', bg: 'bg-status-in-review/20' },
+  approved:  { label: 'Aprobado',      dot: 'bg-status-approved',  text: 'text-status-approved',  bg: 'bg-status-approved/20' },
+  rejected:  { label: 'Rechazado',     dot: 'bg-status-rejected',  text: 'text-status-rejected',  bg: 'bg-status-rejected/20' },
+  tech_debt: { label: 'Deuda Tecnica', dot: 'bg-status-tech-debt', text: 'text-status-tech-debt', bg: 'bg-status-tech-debt/20' },
+}
+
+// Priority config for mini-badges
+export const priorityConfig = {
+  low:      { label: 'Baja',    dot: 'bg-priority-low',      text: 'text-priority-low' },
+  medium:   { label: 'Media',   dot: 'bg-priority-medium',   text: 'text-priority-medium' },
+  high:     { label: 'Alta',    dot: 'bg-priority-high',     text: 'text-priority-high' },
+  critical: { label: 'Critica', dot: 'bg-priority-critical', text: 'text-priority-critical' },
+}
+
 export function formatSprintDate(dateStr, style = 'short') {
   if (!dateStr) return null
   const options = style === 'long'
     ? { day: 'numeric', month: 'long', year: 'numeric' }
     : { day: 'numeric', month: 'short' }
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('es', options)
+}
+
+/**
+ * Format sprint duration as human-readable string.
+ * e.g. "2 semanas", "10 dias", "1.5 semanas"
+ */
+export function formatDuration(totalDays, totalWeeks) {
+  if (totalDays == null) return null
+  if (totalWeeks != null && totalWeeks >= 1) {
+    const w = Math.round(totalWeeks * 10) / 10
+    return w === 1 ? '1 semana' : `${w} semanas`
+  }
+  return totalDays === 1 ? '1 dia' : `${totalDays} dias`
+}
+
+/**
+ * Get urgency color class for days remaining.
+ * Green > 5, Yellow 2-5, Red 0-1, Gray if null/finished.
+ */
+export function getDaysUrgency(daysRemaining) {
+  if (daysRemaining == null) return 'text-text-muted'
+  if (daysRemaining < 0) return 'text-status-rejected'
+  if (daysRemaining <= 1) return 'text-status-rejected'
+  if (daysRemaining <= 5) return 'text-status-in-review'
+  return 'text-status-approved'
 }
