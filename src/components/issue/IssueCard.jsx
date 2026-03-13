@@ -73,6 +73,22 @@ export function IssueCard({ issue, index = 0 }) {
             <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <StatusBadge status={issue.status} />
               <PriorityBadge priority={issue.priority} size="sm" />
+              {issue.complexity && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
+                  style={{
+                    backgroundColor: `${issue.complexity.color}15`,
+                    borderColor: `${issue.complexity.color}40`,
+                    color: issue.complexity.color,
+                  }}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: issue.complexity.color }}
+                  />
+                  {issue.complexity.label}
+                </span>
+              )}
             </div>
           </div>
 
@@ -184,6 +200,18 @@ export function IssueCardCompact({ issue, index = 0 }) {
             {assigneeName}{updatedAt ? ` \u2022 ${formatDistanceToNow(updatedAt, { addSuffix: true, locale: es })}` : ''}
           </p>
         </div>
+        {issue.complexity && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border"
+            style={{
+              backgroundColor: `${issue.complexity.color}15`,
+              borderColor: `${issue.complexity.color}40`,
+              color: issue.complexity.color,
+            }}
+          >
+            {issue.complexity.label}
+          </span>
+        )}
         <StatusBadge status={issue.status} size="sm" />
       </motion.div>
     </Link>

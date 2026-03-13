@@ -27,6 +27,23 @@ const orgService = {
     return apiClient(`/org/roles/${id}/`, { method: 'DELETE' })
   },
 
+  // --- Complexity Levels ---
+  async getComplexityLevels() {
+    return apiClient('/org/complexity-levels/')
+  },
+
+  async createComplexityLevel(data) {
+    return apiClient('/org/complexity-levels/', { method: 'POST', body: data })
+  },
+
+  async updateComplexityLevel(id, data) {
+    return apiClient(`/org/complexity-levels/${id}/`, { method: 'PATCH', body: data })
+  },
+
+  async deleteComplexityLevel(id) {
+    return apiClient(`/org/complexity-levels/${id}/`, { method: 'DELETE' })
+  },
+
   // --- Invitations ---
   async getInvitations() {
     return apiClient('/org/invitations/list/')

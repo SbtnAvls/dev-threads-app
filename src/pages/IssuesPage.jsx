@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Search, Plus, LayoutGrid, List } from 'lucide-react'
 import { IssueCard, IssueCardCompact, NewIssueModal } from '../components/issue'
 import { Button, Input, Select, EmptyState, useToast } from '../components/ui'
-import { useIssues, useIssueStats, useSprints, useDevelopers, useDebounce } from '../hooks'
+import { useIssues, useIssueStats, useSprints, useDevelopers, useDebounce, useComplexityLevels } from '../hooks'
 import { useAuth } from '../context/AuthContext'
 import { fullName } from '../utils/helpers'
 import githubService from '../services/githubService'
@@ -26,15 +26,17 @@ export function IssuesPage() {
   const statusFilter = searchParams.get('status') || 'all'
   const sprintFilter = searchParams.get('sprint') || 'all'
   const assigneeFilter = searchParams.get('assignee') || 'all'
+  const complexityFilter = searchParams.get('complexity') || 'all'
   const [viewMode, setViewMode] = useState('grid')
   const [showNewIssueModal, setShowNewIssueModal] = useState(false)
   const toast = useToast()
   const { hasPermission } = useAuth()
   const { stats, loading: statsLoading } = useIssueStats()
 
-  // Load sprints and developers for filter dropdowns
+  // Load sprints, developers, and complexity levels for filter dropdowns
   const { sprints: allSprints } = useSprints({})
   const { developers } = useDevelopers()
+  const { levels: complexityLevels } = useComplexityLevels()
 
   const assigneeOptions = useMemo(() => {
     const options = [{ value: 'all', label: 'Todos los miembros' }]
@@ -43,6 +45,20 @@ export function IssuesPage() {
     }
     return options
   }, [developers])
+
+  const complexityOptions = useMemo(() => {
+    const options = [
+      { value: 'all', label: 'Todas las complejidades' },
+      { value: 'none', label: 'Sin complejidad' },
+    ]
+    if (complexityLevels.length > 0) {
+      complexityLevels.forEach(l => options.push({
+        value: String(l.id),
+        label: `${l.label} (${l.value} pts)`,
+      }))
+    }
+    return options
+  }, [complexityLevels])
 
   const sprintOptions = useMemo(() => {
     const options = [
@@ -58,14 +74,15 @@ export function IssuesPage() {
   }, [allSprints])
 
   const buildParams = useCallback((overrides = {}) => {
-    const current = { status: statusFilter, sprint: sprintFilter, assignee: assigneeFilter }
+    const current = { status: statusFilter, sprint: sprintFilter, assignee: assigneeFilter, complexity: complexityFilter }
     const merged = { ...current, ...overrides }
     const params = {}
     if (merged.status !== 'all') params.status = merged.status
     if (merged.sprint !== 'all') params.sprint = merged.sprint
     if (merged.assignee !== 'all') params.assignee = merged.assignee
+    if (merged.complexity !== 'all') params.complexity = merged.complexity
     return params
-  }, [statusFilter, sprintFilter, assigneeFilter])
+  }, [statusFilter, sprintFilter, assigneeFilter, complexityFilter])
 
   const setStatusFilter = useCallback((value) => {
     setSearchParams(buildParams({ status: value }), { replace: true })
@@ -79,6 +96,10 @@ export function IssuesPage() {
     setSearchParams(buildParams({ assignee: value }), { replace: true })
   }, [setSearchParams, buildParams])
 
+  const setComplexityFilter = useCallback((value) => {
+    setSearchParams(buildParams({ complexity: value }), { replace: true })
+  }, [setSearchParams, buildParams])
+
   // Build API filters
   const apiFilters = useMemo(() => {
     const filters = {}
@@ -86,8 +107,9 @@ export function IssuesPage() {
     if (searchQuery.trim()) filters.search = searchQuery.trim()
     if (sprintFilter !== 'all') filters.sprint = sprintFilter
     if (assigneeFilter !== 'all') filters.assigned_to = assigneeFilter
+    if (complexityFilter !== 'all') filters.complexity = complexityFilter
     return filters
-  }, [statusFilter, searchQuery, sprintFilter, assigneeFilter])
+  }, [statusFilter, searchQuery, sprintFilter, assigneeFilter, complexityFilter])
 
   const { issues: rawIssues, loading, createIssue, refetch } = useIssues(apiFilters)
 
@@ -191,6 +213,18 @@ export function IssuesPage() {
             placeholder="Sprint..."
           />
         </div>
+
+        {/* Complexity filter */}
+        {complexityLevels.length > 0 && (
+          <div className="w-full sm:w-52">
+            <Select
+              options={complexityOptions}
+              value={complexityFilter}
+              onChange={setComplexityFilter}
+              placeholder="Complejidad..."
+            />
+          </div>
+        )}
 
         {/* View toggle */}
         <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-secondary border border-border-primary">

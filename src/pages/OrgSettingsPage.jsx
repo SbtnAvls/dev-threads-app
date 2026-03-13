@@ -5,6 +5,7 @@ import {
   Copy, Check, X, RefreshCw, UserMinus, UserPlus,
   Github, ExternalLink, Eye, EyeOff, Lock, Unlock,
   GitBranch, AlertCircle, CheckCircle, Loader2,
+  Layers, Pencil,
 } from 'lucide-react'
 import { useAuth } from '../hooks'
 import { Button, Badge, Modal, ModalFooter } from '../components/ui'
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'members', label: 'Miembros', icon: Users },
   { id: 'invitations', label: 'Invitaciones', icon: Mail },
   { id: 'roles', label: 'Roles', icon: Shield },
+  { id: 'complexity', label: 'Complejidad', icon: Layers },
   { id: 'github', label: 'GitHub', icon: Github },
 ]
 
@@ -88,6 +90,7 @@ export function OrgSettingsPage() {
         {activeTab === 'members' && <MembersTab isAdmin={isOrgAdmin} />}
         {activeTab === 'invitations' && <InvitationsTab isAdmin={isOrgAdmin} />}
         {activeTab === 'roles' && <RolesTab isAdmin={isOrgAdmin} />}
+        {activeTab === 'complexity' && <ComplexityTab isAdmin={isOrgAdmin} />}
         {activeTab === 'github' && <GitHubTab canManage={isOrgAdmin || hasPermission('manage_repos')} />}
       </motion.div>
     </div>
@@ -845,6 +848,305 @@ function RoleModal({ role, onClose, onSaved }) {
         <ModalFooter>
           <Button variant="secondary" onClick={onClose} type="button">Cancelar</Button>
           <Button type="submit" disabled={loading || !name.trim()}>
+            {loading ? 'Guardando...' : isEdit ? 'Guardar' : 'Crear'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
+  )
+}
+
+// ─── Complexity Tab ─────────────────────────────────────────────────────────
+
+function ComplexityTab({ isAdmin }) {
+  const [levels, setLevels] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingLevel, setEditingLevel] = useState(null)
+
+  const loadLevels = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await orgService.getComplexityLevels()
+      setLevels(data)
+    } catch (err) {
+      setError(err.message || 'Error al cargar niveles de complejidad')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadLevels() }, [loadLevels])
+
+  const handleDelete = async (id, label) => {
+    if (!confirm(`Eliminar el nivel "${label}"?`)) return
+    try {
+      await orgService.deleteComplexityLevel(id)
+      loadLevels()
+    } catch (err) {
+      alert(err.message || 'Error al eliminar')
+    }
+  }
+
+  if (loading) return <LoadingSpinner />
+  if (error) return <ErrorMessage message={error} onRetry={loadLevels} />
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border-primary bg-bg-secondary p-5">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">Niveles de Complejidad</h3>
+            <p className="text-xs text-text-muted mt-0.5">
+              Define los niveles de complejidad para clasificar issues. El valor numerico se usa para calcular story points en metricas.
+            </p>
+          </div>
+          {isAdmin && (
+            <Button icon={Plus} size="sm" onClick={() => setShowCreateModal(true)}>
+              Crear Nivel
+            </Button>
+          )}
+        </div>
+
+        {levels.length === 0 ? (
+          <div className="text-center py-8 text-text-muted text-sm">
+            No hay niveles de complejidad configurados
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {levels.map(level => (
+              <div
+                key={level.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border-primary bg-bg-primary"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-white/10"
+                    style={{ backgroundColor: level.color }}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">{level.label}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-bg-elevated text-text-muted border border-border-primary">
+                        {level.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-text-muted">
+                        Valor: <span className="font-semibold text-text-secondary">{level.value}</span> pts
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        Orden: {level.order}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Pencil}
+                      onClick={() => setEditingLevel(level)}
+                    />
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => handleDelete(level.id, level.label)}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Info card */}
+      <div className="rounded-xl border border-border-primary bg-bg-secondary p-5">
+        <h4 className="text-xs font-semibold text-text-secondary mb-2">Como funcionan los valores</h4>
+        <p className="text-xs text-text-muted leading-relaxed">
+          El <span className="font-medium text-text-secondary">valor numerico</span> de cada nivel se usa para calcular story points
+          en la pagina de metricas. Los valores por defecto siguen una escala tipo Fibonacci (1, 2, 3, 5, 8) para reflejar
+          el incremento no lineal del esfuerzo. Puedes personalizarlos segun las necesidades de tu equipo.
+        </p>
+      </div>
+
+      {(showCreateModal || editingLevel) && (
+        <ComplexityModal
+          level={editingLevel}
+          onClose={() => { setShowCreateModal(false); setEditingLevel(null) }}
+          onSaved={() => { setShowCreateModal(false); setEditingLevel(null); loadLevels() }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Complexity Modal ───────────────────────────────────────────────────────
+
+const PRESET_COLORS = [
+  '#6b7280', '#22c55e', '#f59e0b', '#ef4444', '#9333ea',
+  '#3b82f6', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6',
+]
+
+function ComplexityModal({ level, onClose, onSaved }) {
+  const isEdit = !!level
+  const [name, setName] = useState(level?.name || '')
+  const [label, setLabel] = useState(level?.label || '')
+  const [color, setColor] = useState(level?.color || '#6b7280')
+  const [value, setValue] = useState(level?.value ?? 1)
+  const [order, setOrder] = useState(level?.order ?? 0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    // Client-side validation
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+      setError('El color debe ser un hex valido (ej: #ef4444)')
+      return
+    }
+    const numValue = Number(value)
+    if (!Number.isInteger(numValue) || numValue < 1 || numValue > 100) {
+      setError('El valor debe ser un entero entre 1 y 100')
+      return
+    }
+    const numOrder = Number(order)
+    if (!Number.isInteger(numOrder) || numOrder < 0) {
+      setError('El orden debe ser un entero mayor o igual a 0')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const data = {
+        name: name.trim().toLowerCase(),
+        label: label.trim(),
+        color,
+        value: numValue,
+        order: numOrder,
+      }
+      if (isEdit) {
+        await orgService.updateComplexityLevel(level.id, data)
+      } else {
+        await orgService.createComplexityLevel(data)
+      }
+      onSaved()
+    } catch (err) {
+      setError(err.message || 'Error al guardar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal isOpen onClose={onClose} title={isEdit ? 'Editar Nivel' : 'Crear Nivel de Complejidad'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 rounded-lg bg-status-rejected/10 border border-status-rejected/20 text-status-rejected text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Nombre interno</label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="ej: medium"
+              required
+              className="w-full px-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary font-mono focus:outline-none focus:border-accent-blue transition-all"
+            />
+            <p className="text-[10px] text-text-muted mt-1">Identificador unico (minusculas)</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Etiqueta</label>
+            <input
+              value={label}
+              onChange={e => setLabel(e.target.value)}
+              placeholder="ej: Media"
+              required
+              className="w-full px-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all"
+            />
+            <p className="text-[10px] text-text-muted mt-1">Nombre visible en la UI</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Valor (story points)</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              required
+              className="w-full px-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all"
+            />
+            <p className="text-[10px] text-text-muted mt-1">Para metricas (1-100)</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Orden</label>
+            <input
+              type="number"
+              min={0}
+              value={order}
+              onChange={e => setOrder(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg border border-border-primary bg-bg-primary text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all"
+            />
+            <p className="text-[10px] text-text-muted mt-1">Posicion en listas (menor = primero)</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-1.5">Color</label>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1.5 flex-wrap">
+              {PRESET_COLORS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`w-7 h-7 rounded-lg transition-all ${
+                    color === c
+                      ? 'ring-2 ring-accent-blue ring-offset-2 ring-offset-bg-secondary scale-110'
+                      : 'hover:scale-105 ring-1 ring-white/10'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <input
+              type="text"
+              value={color}
+              onChange={e => setColor(e.target.value)}
+              pattern="^#[0-9a-fA-F]{6}$"
+              className="w-24 px-2.5 py-1.5 rounded-lg border border-border-primary bg-bg-primary text-xs text-text-primary font-mono focus:outline-none focus:border-accent-blue transition-all"
+            />
+          </div>
+          {/* Preview */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-text-muted">Vista previa:</span>
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-white"
+              style={{ backgroundColor: color }}
+            >
+              {label || 'Etiqueta'}
+            </span>
+          </div>
+        </div>
+
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose} type="button">Cancelar</Button>
+          <Button type="submit" disabled={loading || !name.trim() || !label.trim()}>
             {loading ? 'Guardando...' : isEdit ? 'Guardar' : 'Crear'}
           </Button>
         </ModalFooter>

@@ -10,6 +10,7 @@ import {
   Activity,
   Calendar,
   TrendingUp,
+  Layers,
   X,
 } from 'lucide-react'
 import {
@@ -185,11 +186,15 @@ export function MetricsPage() {
     loading,
     issuesByStatus,
     issuesByPriority,
+    issuesByComplexity,
     workloadByDev,
     issuesByTag,
     sprintVelocity,
+    storyPointsByDev,
+    storyPointsBySprint,
     rejectionRate,
     totalIssues,
+    totalStoryPoints,
   } = useMetricsData(dateRange)
 
   const statusTotal = useMemo(
@@ -204,8 +209,8 @@ export function MetricsPage() {
           <Skeleton className="h-8 w-40 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
@@ -252,8 +257,9 @@ export function MetricsPage() {
       </div>
 
       {/* Summary stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatCard label="Total Issues" value={totalIssues} color="text-accent-blue" icon={BarChart3} />
+        <StatCard label="Story Points" value={totalStoryPoints} color="text-purple-400" icon={Layers} />
         <StatCard label="En Revision" value={reviewCount} color="text-status-in-review" icon={Activity} />
         <StatCard label="Tasa Aprobacion" value={`${approvalRate}%`} color="text-status-approved" icon={TrendingUp} />
         <StatCard label="Rechazados" value={rejectedCount} color="text-status-rejected" icon={AlertTriangle} />
@@ -311,7 +317,59 @@ export function MetricsPage() {
         </MetricCard>
       </div>
 
-      {/* Row 2: Workload per dev + Rejection rate */}
+      {/* Row 2: Complexity donut + Story Points per dev */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Issues by Complexity - Donut */}
+        <MetricCard title="Issues por Complejidad" icon={Layers}>
+          {issuesByComplexity.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-12">Sin datos de complejidad</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={issuesByComplexity}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                  labelLine={false}
+                  label={renderCustomLabel}
+                >
+                  {issuesByComplexity.map((entry, index) => (
+                    <Cell key={index} fill={entry.color} stroke="transparent" />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+                <Legend
+                  verticalAlign="bottom"
+                  formatter={(value) => <span className="text-xs text-text-secondary">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </MetricCard>
+
+        {/* Story Points per Developer - Horizontal bar */}
+        <MetricCard title="Story Points por Desarrollador" icon={Users}>
+          {storyPointsByDev.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-12">Sin datos de story points</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.max(280, storyPointsByDev.length * 45)}>
+              <BarChart data={storyPointsByDev} layout="vertical" margin={{ left: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a45" horizontal={false} />
+                <XAxis type="number" tick={{ fill: '#a0a0b5', fontSize: 12 }} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#a0a0b5', fontSize: 11 }} width={120} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="points" name="Story Points" fill="#a855f7" radius={[0, 6, 6, 0]} barSize={22} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </MetricCard>
+      </div>
+
+      {/* Row 3: Workload per dev + Rejection rate */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Workload per developer - Stacked bar */}
         <MetricCard title="Carga por Desarrollador" icon={Users} className="lg:col-span-1">
@@ -379,7 +437,7 @@ export function MetricsPage() {
         </MetricCard>
       </div>
 
-      {/* Row 3: Sprint velocity + Tags */}
+      {/* Row 4: Sprint velocity + Story Points per Sprint */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sprint Velocity - Area chart */}
         <MetricCard title="Velocidad de Sprints" icon={Zap}>
@@ -410,6 +468,38 @@ export function MetricsPage() {
           )}
         </MetricCard>
 
+        {/* Story Points per Sprint - Area chart */}
+        <MetricCard title="Story Points por Sprint" icon={Layers}>
+          {storyPointsBySprint.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-12">Sin sprints completados o activos</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={storyPointsBySprint}>
+                <defs>
+                  <linearGradient id="gradSPTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradSPApproved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a45" />
+                <XAxis dataKey="name" tick={{ fill: '#a0a0b5', fontSize: 11 }} angle={-20} textAnchor="end" height={50} />
+                <YAxis tick={{ fill: '#a0a0b5', fontSize: 12 }} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Legend formatter={(value) => <span className="text-xs text-text-secondary">{value}</span>} />
+                <Area type="monotone" dataKey="total" name="Total Pts" stroke="#a855f7" fill="url(#gradSPTotal)" strokeWidth={2} />
+                <Area type="monotone" dataKey="approved" name="Pts Aprobados" stroke="#10b981" fill="url(#gradSPApproved)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </MetricCard>
+      </div>
+
+      {/* Row 5: Tags */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Issues by Tag - Horizontal bar */}
         <MetricCard title="Issues por Etiqueta" icon={Tag}>
           {issuesByTag.length === 0 ? (
@@ -444,12 +534,14 @@ export function MetricsPage() {
                   <th className="text-center py-2.5 px-3 text-text-muted font-medium text-xs uppercase">Aprobados</th>
                   <th className="text-center py-2.5 px-3 text-text-muted font-medium text-xs uppercase">Rechazados</th>
                   <th className="text-center py-2.5 px-3 text-text-muted font-medium text-xs uppercase">Deuda T.</th>
+                  <th className="text-center py-2.5 px-3 text-text-muted font-medium text-xs uppercase">Story Pts</th>
                   <th className="text-center py-2.5 px-3 text-text-muted font-medium text-xs uppercase">% Aprob.</th>
                 </tr>
               </thead>
               <tbody>
                 {workloadByDev.map((dev, i) => {
                   const devApprovalRate = dev.total > 0 ? Math.round((dev.approved / dev.total) * 100) : 0
+                  const devPts = storyPointsByDev.find(d => d.name === dev.name)?.points || 0
                   return (
                     <motion.tr
                       key={dev.name}
@@ -465,6 +557,7 @@ export function MetricsPage() {
                       <td className="py-2.5 px-3 text-center"><span className="text-status-approved">{dev.approved}</span></td>
                       <td className="py-2.5 px-3 text-center"><span className="text-status-rejected">{dev.rejected}</span></td>
                       <td className="py-2.5 px-3 text-center"><span className="text-status-tech-debt">{dev.tech_debt}</span></td>
+                      <td className="py-2.5 px-3 text-center"><span className="text-purple-400 font-semibold">{devPts}</span></td>
                       <td className="py-2.5 px-3 text-center">
                         <span className={clsx(
                           'text-xs font-semibold px-2 py-0.5 rounded-full',

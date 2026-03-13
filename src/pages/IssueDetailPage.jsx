@@ -24,9 +24,9 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Timeline, AddTimelineEntry } from '../components/issue'
 import { Button, Avatar, StatusBadge, PriorityBadge, Card, Modal, ModalFooter, Input, Textarea, Select, Confetti, useToast } from '../components/ui'
-import { useIssueDetail, useTimeline, useAuth, useDevelopers } from '../hooks'
+import { useIssueDetail, useTimeline, useAuth, useDevelopers, useComplexityLevels } from '../hooks'
 import { fullName, parseDate } from '../utils/helpers'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import githubService from '../services/githubService'
 import issueService from '../services/issueService'
 
@@ -189,6 +189,23 @@ export function IssueDetailPage() {
                     isOrgAdmin={isOrgAdmin}
                   />
                   <PriorityBadge priority={issue.priority} />
+                  {issue.complexity && (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border"
+                      style={{
+                        backgroundColor: `${issue.complexity.color}15`,
+                        borderColor: `${issue.complexity.color}40`,
+                        color: issue.complexity.color,
+                      }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: issue.complexity.color }}
+                      />
+                      {issue.complexity.label}
+                      <span className="opacity-70">({issue.complexity.value})</span>
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-2xl font-bold text-text-primary">
                   {issue.title}
@@ -406,6 +423,34 @@ export function IssueDetailPage() {
               </div>
             </Card>
           </motion.div>
+
+          {/* Complexity */}
+          {issue.complexity && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.27 }}
+            >
+              <Card>
+                <h3 className="text-sm font-medium text-text-muted mb-3">Complejidad</h3>
+                <div className="flex items-center gap-3 p-2">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
+                    style={{
+                      backgroundColor: `${issue.complexity.color}20`,
+                      color: issue.complexity.color,
+                    }}
+                  >
+                    {issue.complexity.value}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">{issue.complexity.label}</p>
+                    <p className="text-xs text-text-muted">{issue.complexity.value} story points</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           {/* GitHub Repos */}
           <motion.div
@@ -699,14 +744,36 @@ const commonTags = ['frontend', 'backend', 'api', 'autenticacion', 'interfaz', '
 
 function EditIssueModal({ issue, onClose, onSaved }) {
   const { developers } = useDevelopers()
+  const { levels: activeLevels, loading: complexityLoading } = useComplexityLevels()
   const [title, setTitle] = useState(issue.title || '')
   const [description, setDescription] = useState(issue.description || '')
   const [priority, setPriority] = useState(issue.priority || 'medium')
   const [assignedTo, setAssignedTo] = useState(issue.assigned_to?.id?.toString() || '')
+  const [complexityId, setComplexityId] = useState(issue.complexity?.id?.toString() || '')
   const [tags, setTags] = useState(issue.tags || [])
   const [customTag, setCustomTag] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Build complexity options: include current level even if inactive
+  const complexityOptions = useMemo(() => {
+    const options = [{ value: '', label: 'Sin complejidad' }]
+    const activeIds = new Set(activeLevels.map(l => l.id))
+    // If the issue has a complexity level that is not in active levels, add it as "(inactivo)"
+    if (issue.complexity && !activeIds.has(issue.complexity.id)) {
+      options.push({
+        value: String(issue.complexity.id),
+        label: `${issue.complexity.label} (${issue.complexity.value} pts) - inactivo`,
+      })
+    }
+    activeLevels.forEach(l => {
+      options.push({
+        value: String(l.id),
+        label: `${l.label} (${l.value} pts)`,
+      })
+    })
+    return options
+  }, [activeLevels, issue.complexity])
 
   // Repos state
   const [orgRepos, setOrgRepos] = useState([])
@@ -774,9 +841,10 @@ function EditIssueModal({ issue, onClose, onSaved }) {
         description: description.trim(),
         priority,
         tags,
+        complexity_id: complexityId ? Number(complexityId) : null,
       }
       if (assignedTo) {
-        data.assigned_to_id = parseInt(assignedTo)
+        data.assigned_to_id = Number(assignedTo)
       } else {
         data.assigned_to_id = null
       }
@@ -838,6 +906,21 @@ function EditIssueModal({ issue, onClose, onSaved }) {
             options={priorityOptions}
           />
         </div>
+
+        {/* Complexity */}
+        {complexityLoading ? (
+          <div className="flex items-center gap-2 py-1 text-text-muted">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs">Cargando niveles de complejidad...</span>
+          </div>
+        ) : complexityOptions.length > 1 && (
+          <Select
+            label="Complejidad"
+            options={complexityOptions}
+            value={complexityId}
+            onChange={setComplexityId}
+          />
+        )}
 
         {/* GitHub Repos */}
         {(orgRepos.length > 0 || reposLoading || reposError) && (

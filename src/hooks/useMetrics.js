@@ -133,6 +133,65 @@ export function useMetricsData(dateRange = {}) {
       })
   }, [sprints, issues])
 
+  // Issues by complexity level
+  const issuesByComplexity = useMemo(() => {
+    const levelMap = {}
+    filteredIssues.forEach(issue => {
+      if (!issue.complexity) return
+      const key = issue.complexity.id
+      if (!levelMap[key]) {
+        levelMap[key] = {
+          name: issue.complexity.label,
+          value: 0,
+          color: issue.complexity.color,
+          points: issue.complexity.value,
+        }
+      }
+      levelMap[key].value++
+    })
+    return Object.values(levelMap).sort((a, b) => a.points - b.points)
+  }, [filteredIssues])
+
+  // Total story points
+  const totalStoryPoints = useMemo(() => {
+    return filteredIssues.reduce((sum, issue) => {
+      return sum + (issue.complexity?.value || 0)
+    }, 0)
+  }, [filteredIssues])
+
+  // Story points per developer
+  const storyPointsByDev = useMemo(() => {
+    const devMap = {}
+    filteredIssues.forEach(issue => {
+      if (!issue.assigned_to || !issue.complexity) return
+      const devId = issue.assigned_to.id
+      if (!devMap[devId]) {
+        devMap[devId] = { name: fullName(issue.assigned_to), points: 0, issues: 0 }
+      }
+      devMap[devId].points += issue.complexity.value
+      devMap[devId].issues++
+    })
+    return Object.values(devMap).sort((a, b) => b.points - a.points)
+  }, [filteredIssues])
+
+  // Story points per sprint
+  const storyPointsBySprint = useMemo(() => {
+    return sprints
+      .filter(s => s.status === 'completed' || s.status === 'active')
+      .map(sprint => {
+        const sprintIssues = issues.filter(i => i.sprint?.id === sprint.id || i.sprint === sprint.id)
+        const totalPts = sprintIssues.reduce((sum, i) => sum + (i.complexity?.value || 0), 0)
+        const approvedPts = sprintIssues
+          .filter(i => i.status === 'approved')
+          .reduce((sum, i) => sum + (i.complexity?.value || 0), 0)
+        return {
+          name: sprint.name,
+          total: totalPts,
+          approved: approvedPts,
+        }
+      })
+  }, [sprints, issues])
+
   // Rejection rate per developer
   const rejectionRate = useMemo(() => {
     const devMap = {}
@@ -160,12 +219,16 @@ export function useMetricsData(dateRange = {}) {
     filteredIssues,
     issuesByStatus,
     issuesByPriority,
+    issuesByComplexity,
     workloadByDev,
     issuesByTag,
     sprintVelocity,
+    storyPointsByDev,
+    storyPointsBySprint,
     rejectionRate,
     developers,
     sprints,
     totalIssues: filteredIssues.length,
+    totalStoryPoints,
   }
 }

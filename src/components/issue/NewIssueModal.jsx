@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Tag, X, Github, Lock, Unlock, Loader2 } from 'lucide-react'
 import { Modal, ModalFooter, Button, Input, Textarea, Select, Avatar } from '../ui'
-import { useDevelopers } from '../../hooks'
+import { useDevelopers, useComplexityLevels } from '../../hooks'
 import { fullName } from '../../utils/helpers'
 import githubService from '../../services/githubService'
 
@@ -22,11 +22,13 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
   const [priority, setPriority] = useState('medium')
   const [tags, setTags] = useState([])
   const [customTag, setCustomTag] = useState('')
+  const [complexityId, setComplexityId] = useState('')
   const [selectedRepos, setSelectedRepos] = useState(new Set())
   const [orgRepos, setOrgRepos] = useState([])
   const [reposLoading, setReposLoading] = useState(false)
   const [reposError, setReposError] = useState(false)
   const { developers } = useDevelopers()
+  const { levels: complexityLevels, loading: complexityLoading } = useComplexityLevels({ enabled: isOpen })
 
   // Load org repos when modal opens
   useEffect(() => {
@@ -60,14 +62,16 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
 
     setSubmitting(true)
     try {
-      await onSubmit?.({
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         assigned_to_id: Number(assignedTo),
         priority,
         tags,
         repo_ids: [...selectedRepos],
-      })
+      }
+      if (complexityId) payload.complexity_id = Number(complexityId)
+      await onSubmit?.(payload)
       // Only close/reset on success — parent controls the close
       handleClose()
     } catch {
@@ -82,6 +86,7 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
     setDescription('')
     setAssignedTo('')
     setPriority('medium')
+    setComplexityId('')
     setTags([])
     setCustomTag('')
     setSelectedRepos(new Set())
@@ -140,7 +145,7 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
           rows={4}
         />
 
-        {/* Assignee and Priority row */}
+        {/* Assignee, Priority, and Complexity row */}
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Asignar a"
@@ -156,6 +161,28 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
             onChange={setPriority}
           />
         </div>
+
+        {/* Complexity */}
+        {complexityLoading ? (
+          <div className="flex items-center gap-2 py-1 text-text-muted">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs">Cargando niveles de complejidad...</span>
+          </div>
+        ) : complexityLevels.length > 0 && (
+          <Select
+            label="Complejidad"
+            options={[
+              { value: '', label: 'Sin complejidad' },
+              ...complexityLevels.map(l => ({
+                value: String(l.id),
+                label: `${l.label} (${l.value} pts)`,
+              })),
+            ]}
+            value={complexityId}
+            onChange={setComplexityId}
+            placeholder="Seleccionar complejidad"
+          />
+        )}
 
         {/* GitHub Repos */}
         {(orgRepos.length > 0 || reposLoading || reposError) && (
