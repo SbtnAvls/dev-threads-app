@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import {
   Clock,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Zap,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -122,6 +123,15 @@ export function IssueCard({ issue, index = 0 }) {
                   <Clock className="w-3.5 h-3.5" />
                   <span className="text-xs">{timelineCount}</span>
                 </div>
+                {issue.sprint && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+                    title={`Sprint: ${issue.sprint.name}`}
+                  >
+                    <Zap className="w-3 h-3" />
+                    <span className="max-w-[100px] truncate">{issue.sprint.name}</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -200,6 +210,15 @@ export function IssueCardCompact({ issue, index = 0 }) {
             {assigneeName}{updatedAt ? ` \u2022 ${formatDistanceToNow(updatedAt, { addSuffix: true, locale: es })}` : ''}
           </p>
         </div>
+        {issue.sprint && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+            title={`Sprint: ${issue.sprint.name}`}
+          >
+            <Zap className="w-3 h-3" />
+            <span className="max-w-[80px] truncate hidden sm:inline">{issue.sprint.name}</span>
+          </span>
+        )}
         {issue.complexity && (
           <span
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border"
