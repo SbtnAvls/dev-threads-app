@@ -1,12 +1,14 @@
-import { useState, useMemo, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, Plus, LayoutGrid, List } from 'lucide-react'
+import { Search, Plus, LayoutGrid, List, Sparkles } from 'lucide-react'
 import { IssueCard, IssueCardCompact, NewIssueModal } from '../components/issue'
+import { SprintAIGenerateModal } from '../components/sprint'
 import { Button, Input, Select, EmptyState, useToast } from '../components/ui'
 import { useIssues, useIssueStats, useSprints, useDevelopers, useDebounce, useComplexityLevels } from '../hooks'
 import { useAuth } from '../context/AuthContext'
 import { fullName } from '../utils/helpers'
+import orgService from '../services/orgService'
 import githubService from '../services/githubService'
 import clsx from 'clsx'
 
@@ -29,8 +31,20 @@ export function IssuesPage() {
   const complexityFilter = searchParams.get('complexity') || 'all'
   const [viewMode, setViewMode] = useState('grid')
   const [showNewIssueModal, setShowNewIssueModal] = useState(false)
+  const [showAIModal, setShowAIModal] = useState(false)
+  const [hasGeminiToken, setHasGeminiToken] = useState(null)
   const toast = useToast()
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
+
+  // Check if Gemini is configured
+  useEffect(() => {
+    let cancelled = false
+    orgService.getGeminiTokenStatus()
+      .then(data => { if (!cancelled) setHasGeminiToken(data.has_token) })
+      .catch(() => { if (!cancelled) setHasGeminiToken(false) })
+    return () => { cancelled = true }
+  }, [])
   const { stats, loading: statsLoading } = useIssueStats()
 
   // Load sprints, developers, and complexity levels for filter dropdowns
@@ -167,6 +181,16 @@ export function IssuesPage() {
         onSubmit={handleNewIssue}
       />
 
+      {/* AI Generate Sprint Modal */}
+      <SprintAIGenerateModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onSuccess={() => {
+          toast.success('Sprints creados exitosamente con AI')
+          refetch()
+        }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -224,6 +248,19 @@ export function IssuesPage() {
               placeholder="Complejidad..."
             />
           </div>
+        )}
+
+        {/* AI Sprint generation */}
+        {hasPermission('manage_sprints') && hasGeminiToken && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAIModal(true)}
+            className="p-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors shrink-0"
+            title="Generar Sprint con AI"
+          >
+            <Sparkles className="w-4 h-4" />
+          </motion.button>
         )}
 
         {/* View toggle */}
