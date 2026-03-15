@@ -281,8 +281,8 @@ export function IssuesPage() {
         </div>
       </div>
 
-      {/* Status filter pills */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Status filter pills + AI button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {statusFilters.map((filter) => {
             const count = getStatCount(filter.value)
@@ -313,7 +313,7 @@ export function IssuesPage() {
             variant="secondary"
             icon={Sparkles}
             onClick={() => setShowAIModal(true)}
-            className="!border-purple-500/30 !text-purple-400 hover:!bg-purple-500/10 shrink-0"
+            className="!border-purple-500/30 !text-purple-400 hover:!bg-purple-500/10 shrink-0 w-full sm:w-auto"
           >
             Generar sprint con AI
           </Button>
