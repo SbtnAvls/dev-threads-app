@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, Plus } from 'lucide-react'
-import { SprintCard, SprintFormModal } from '../components/sprint'
+import { Search, Plus, Sparkles, AlertCircle } from 'lucide-react'
+import { SprintCard, SprintFormModal, SprintAIGenerateModal } from '../components/sprint'
 import { Button, Input, EmptyState, useToast } from '../components/ui'
 import { useSprints, useDebounce } from '../hooks'
 import { useAuth } from '../context/AuthContext'
+import orgService from '../services/orgService'
 import clsx from 'clsx'
 
 const statusFilters = [
@@ -21,9 +22,21 @@ export function SprintsPage() {
   const [searchInput, setSearchInput] = useState('')
   const statusFilter = searchParams.get('status') || 'all'
   const [showFormModal, setShowFormModal] = useState(false)
+  const [showAIModal, setShowAIModal] = useState(false)
   const [editingSprint, setEditingSprint] = useState(null)
+  const [hasGeminiToken, setHasGeminiToken] = useState(null)
   const toast = useToast()
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
+
+  // Check if Gemini is configured
+  useEffect(() => {
+    let cancelled = false
+    orgService.getGeminiTokenStatus()
+      .then(data => { if (!cancelled) setHasGeminiToken(data.has_token) })
+      .catch(() => { if (!cancelled) setHasGeminiToken(false) })
+    return () => { cancelled = true }
+  }, [])
 
   const setStatusFilter = useCallback((value) => {
     setSearchParams(value === 'all' ? {} : { status: value }, { replace: true })
@@ -39,7 +52,7 @@ export function SprintsPage() {
     return filters
   }, [statusFilter, searchQuery])
 
-  const { sprints, loading, createSprint, updateSprint, deleteSprint } = useSprints(apiFilters)
+  const { sprints, loading, refetch, createSprint, updateSprint, deleteSprint } = useSprints(apiFilters)
 
   // Count by status from loaded sprints (for pills)
   const getCounts = (statusValue) => {
@@ -90,6 +103,11 @@ export function SprintsPage() {
     setEditingSprint(null)
   }
 
+  const handleAISuccess = () => {
+    toast.success('Sprints creados exitosamente con AI')
+    refetch()
+  }
+
   const canManageSprints = hasPermission('manage_sprints')
 
   return (
@@ -102,6 +120,13 @@ export function SprintsPage() {
         sprint={editingSprint}
       />
 
+      {/* AI Generate Modal */}
+      <SprintAIGenerateModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onSuccess={handleAISuccess}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -112,9 +137,31 @@ export function SprintsPage() {
           </p>
         </div>
         {canManageSprints && (
-          <Button icon={Plus} onClick={() => setShowFormModal(true)}>
-            Nuevo Sprint
-          </Button>
+          <div className="flex items-center gap-2">
+            {hasGeminiToken && (
+              <Button
+                variant="secondary"
+                icon={Sparkles}
+                onClick={() => setShowAIModal(true)}
+                className="!border-purple-500/30 !text-purple-400 hover:!bg-purple-500/10"
+              >
+                Generar con AI
+              </Button>
+            )}
+            {hasGeminiToken === false && (
+              <button
+                onClick={() => navigate('/settings?tab=ai')}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-text-muted hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                title="Configura Gemini AI para generar sprints automaticamente"
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Configurar AI</span>
+              </button>
+            )}
+            <Button icon={Plus} onClick={() => setShowFormModal(true)}>
+              Nuevo Sprint
+            </Button>
+          </div>
         )}
       </div>
 

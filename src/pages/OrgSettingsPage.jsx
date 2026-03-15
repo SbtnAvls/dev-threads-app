@@ -5,7 +5,7 @@ import {
   Copy, Check, X, RefreshCw, UserMinus, UserPlus,
   Github, ExternalLink, Eye, EyeOff, Lock, Unlock,
   GitBranch, AlertCircle, CheckCircle, Loader2,
-  Layers, Pencil, Sparkles, Settings,
+  Layers, Pencil, Sparkles, Settings, Zap,
 } from 'lucide-react'
 import { useAuth } from '../hooks'
 import { Button, Badge, Modal, ModalFooter } from '../components/ui'
@@ -1796,6 +1796,7 @@ function GeminiTab({ isAdmin }) {
   const [message, setMessage] = useState('')
   const [defaultModel, setDefaultModel] = useState('gemini-2.0-flash')
   const [defaultMaxChars, setDefaultMaxChars] = useState(2000)
+  const [sprintGenModel, setSprintGenModel] = useState('gemini-2.5-flash')
   const messageTimerRef = useRef(null)
 
   const busy = saving || deleting || savingDefaults
@@ -1821,6 +1822,7 @@ function GeminiTab({ isAdmin }) {
       setHasToken(data.has_token)
       if (data.default_model) setDefaultModel(data.default_model)
       if (data.default_max_chars) setDefaultMaxChars(data.default_max_chars)
+      if (data.sprint_gen_model) setSprintGenModel(data.sprint_gen_model)
     } catch (err) {
       setError(err.message || 'Error al cargar estado del token')
     } finally {
@@ -1871,6 +1873,7 @@ function GeminiTab({ isAdmin }) {
       await orgService.updateGeminiSettings({
         default_model: defaultModel,
         default_max_chars: defaultMaxChars,
+        sprint_gen_model: sprintGenModel,
       })
       showMessage('Valores por defecto guardados')
     } catch (err) {
@@ -1995,42 +1998,73 @@ function GeminiTab({ isAdmin }) {
               Valores por defecto
             </h3>
             <p className="text-xs text-text-muted mt-1">
-              Configura el modelo y cantidad de caracteres por defecto para los resumenes AI de sprints.
-              Estos valores se usaran como predeterminados al generar nuevos resumenes.
+              Configura los modelos y parametros por defecto para las funcionalidades AI.
+              Estos valores se usaran como predeterminados al generar resumenes y sprints.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                Modelo por defecto
-              </label>
-              <select
-                value={defaultModel}
-                onChange={e => setDefaultModel(e.target.value)}
-                disabled={busy}
-                className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
-              >
-                {GEMINI_MODELS.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
+          {/* Resumenes AI */}
+          <div>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Resumenes de Sprint</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Modelo por defecto
+                </label>
+                <select
+                  value={defaultModel}
+                  onChange={e => setDefaultModel(e.target.value)}
+                  disabled={busy}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+                >
+                  {GEMINI_MODELS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                Max caracteres por defecto
-              </label>
-              <select
-                value={defaultMaxChars}
-                onChange={e => setDefaultMaxChars(Number(e.target.value))}
-                disabled={busy}
-                className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
-              >
-                {MAX_CHARS_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Max caracteres por defecto
+                </label>
+                <select
+                  value={defaultMaxChars}
+                  onChange={e => setDefaultMaxChars(Number(e.target.value))}
+                  disabled={busy}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+                >
+                  {MAX_CHARS_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Generacion de Sprints con AI */}
+          <div className="pt-2 border-t border-border-primary">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Generacion de Sprints con AI</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Modelo para generacion
+                </label>
+                <select
+                  value={sprintGenModel}
+                  onChange={e => setSprintGenModel(e.target.value)}
+                  disabled={busy}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border-primary bg-bg-elevated text-sm text-text-primary focus:outline-none focus:border-accent-blue transition-all disabled:opacity-50"
+                >
+                  {GEMINI_MODELS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <p className="text-xs text-text-muted pb-3">
+                  Este modelo se usara para analizar el backlog y generar propuestas de sprints automaticamente.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -2060,6 +2094,19 @@ function GeminiTab({ isAdmin }) {
               <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
                 Genera automaticamente resumenes del estado de tus sprints usando Google Gemini.
                 Incluye analisis de progreso, issues pendientes, y recomendaciones.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-indigo-500/10 shrink-0">
+              <Zap className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-text-primary">Generacion de Sprints con AI</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                Usa AI para analizar tu backlog y generar propuestas de sprints optimizados.
+                Revisa, edita y confirma antes de crear los sprints.
               </p>
             </div>
           </div>

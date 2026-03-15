@@ -56,6 +56,22 @@ const sprintService = {
       body: Object.keys(body).length > 0 ? body : undefined,
     })
   },
+
+  // AI Sprint Generation
+  async generateAISprints({ model, sprint_duration_weeks, max_sprints } = {}) {
+    const body = {}
+    if (model) body.model = model
+    if (sprint_duration_weeks != null) body.sprint_duration_weeks = sprint_duration_weeks
+    if (max_sprints != null) body.max_sprints = max_sprints
+    return apiClient('/sprints/generate-ai/', { method: 'POST', body })
+  },
+
+  async confirmAISprints(sprints) {
+    return apiClient('/sprints/confirm-ai/', {
+      method: 'POST',
+      body: { sprints },
+    })
+  },
 }
 
 export default sprintService
