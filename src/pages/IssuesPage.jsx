@@ -250,19 +250,6 @@ export function IssuesPage() {
           </div>
         )}
 
-        {/* AI Sprint generation */}
-        {hasPermission('manage_sprints') && hasGeminiToken && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAIModal(true)}
-            className="p-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors shrink-0"
-            title="Generar Sprint con AI"
-          >
-            <Sparkles className="w-4 h-4" />
-          </motion.button>
-        )}
-
         {/* View toggle */}
         <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-secondary border border-border-primary">
           <motion.button
@@ -295,29 +282,42 @@ export function IssuesPage() {
       </div>
 
       {/* Status filter pills */}
-      <div className="flex flex-wrap gap-2">
-        {statusFilters.map((filter) => {
-          const count = getStatCount(filter.value)
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          {statusFilters.map((filter) => {
+            const count = getStatCount(filter.value)
 
-          return (
-            <motion.button
-              key={filter.value}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setStatusFilter(filter.value)}
-              className={clsx(
-                'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-                statusFilter === filter.value
-                  ? 'bg-bg-elevated border-2 border-accent-blue text-text-primary'
-                  : 'bg-bg-secondary border border-border-primary text-text-secondary hover:border-border-secondary'
-              )}
-            >
-              <span className={clsx('w-2 h-2 rounded-full', filter.color)} />
-              {filter.label}
-              {!statsLoading && <span className="text-text-muted">({count})</span>}
-            </motion.button>
-          )
-        })}
+            return (
+              <motion.button
+                key={filter.value}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setStatusFilter(filter.value)}
+                className={clsx(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                  statusFilter === filter.value
+                    ? 'bg-bg-elevated border-2 border-accent-blue text-text-primary'
+                    : 'bg-bg-secondary border border-border-primary text-text-secondary hover:border-border-secondary'
+                )}
+              >
+                <span className={clsx('w-2 h-2 rounded-full', filter.color)} />
+                {filter.label}
+                {!statsLoading && <span className="text-text-muted">({count})</span>}
+              </motion.button>
+            )
+          })}
+        </div>
+
+        {hasPermission('manage_sprints') && hasGeminiToken && (
+          <Button
+            variant="secondary"
+            icon={Sparkles}
+            onClick={() => setShowAIModal(true)}
+            className="!border-purple-500/30 !text-purple-400 hover:!bg-purple-500/10 shrink-0"
+          >
+            Generar sprint con AI
+          </Button>
+        )}
       </div>
 
       {/* Issues list */}
