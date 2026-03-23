@@ -41,7 +41,7 @@ export function IssueCard({ issue, index = 0 }) {
         transition={{ delay: index * 0.05 }}
         whileHover={{ y: -2, scale: 1.005 }}
         className={clsx(
-          'relative group rounded-xl border border-border-primary bg-bg-secondary p-4',
+          'relative group rounded-xl border border-border-primary bg-bg-secondary p-4 h-full',
           'transition-all duration-300 cursor-pointer overflow-hidden',
           glowByStatus[issue.status],
           borderByStatus[issue.status]

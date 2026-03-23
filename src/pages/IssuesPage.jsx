@@ -62,7 +62,7 @@ export function IssuesPage() {
 
   const complexityOptions = useMemo(() => {
     const options = [
-      { value: 'all', label: 'Todas las complejidades' },
+      { value: 'all', label: 'Todas' },
       { value: 'none', label: 'Sin complejidad' },
     ]
     if (complexityLevels.length > 0) {
@@ -337,7 +337,7 @@ export function IssuesPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-fr"
         >
           {issues.map((issue, index) => (
             <IssueCard key={issue.id} issue={issue} index={index} />
