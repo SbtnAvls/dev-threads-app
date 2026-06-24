@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Tag, X, Github, Lock, Unlock, Loader2 } from 'lucide-react'
 import { Modal, ModalFooter, Button, Input, Textarea, Select, Avatar } from '../ui'
-import { useDevelopers, useComplexityLevels } from '../../hooks'
+import { useDevelopers, useComplexityLevels, useEpics } from '../../hooks'
 import { fullName } from '../../utils/helpers'
 import githubService from '../../services/githubService'
 
@@ -23,12 +23,14 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
   const [tags, setTags] = useState([])
   const [customTag, setCustomTag] = useState('')
   const [complexityId, setComplexityId] = useState('')
+  const [epicId, setEpicId] = useState('')
   const [selectedRepos, setSelectedRepos] = useState(new Set())
   const [orgRepos, setOrgRepos] = useState([])
   const [reposLoading, setReposLoading] = useState(false)
   const [reposError, setReposError] = useState(false)
   const { developers } = useDevelopers()
   const { levels: complexityLevels, loading: complexityLoading } = useComplexityLevels({ enabled: isOpen })
+  const { epics } = useEpics({})
 
   // Load org repos when modal opens
   useEffect(() => {
@@ -55,6 +57,13 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
     label: fullName(d),
   }))
 
+  const epicOptions = [
+    { value: '', label: 'Sin epica' },
+    ...epics
+      .filter(e => e.status === 'active' || e.status === 'planning')
+      .map(e => ({ value: String(e.id), label: e.name })),
+  ]
+
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -71,6 +80,7 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
         repo_ids: [...selectedRepos],
       }
       if (complexityId) payload.complexity_id = Number(complexityId)
+      if (epicId) payload.epic_id = Number(epicId)
       await onSubmit?.(payload)
       // Only close/reset on success — parent controls the close
       handleClose()
@@ -87,6 +97,7 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
     setAssignedTo('')
     setPriority('medium')
     setComplexityId('')
+    setEpicId('')
     setTags([])
     setCustomTag('')
     setSelectedRepos(new Set())
@@ -181,6 +192,17 @@ export function NewIssueModal({ isOpen, onClose, onSubmit }) {
             value={complexityId}
             onChange={setComplexityId}
             placeholder="Seleccionar complejidad"
+          />
+        )}
+
+        {/* Epic (optional) */}
+        {epics.length > 0 && (
+          <Select
+            label="Epica"
+            options={epicOptions}
+            value={epicId}
+            onChange={setEpicId}
+            placeholder="Seleccionar epica"
           />
         )}
 

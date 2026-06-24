@@ -4,6 +4,7 @@ export { useIssues, useIssueDetail, useIssueStats, useDevStats } from './useIssu
 export { useTimeline } from './useTimeline'
 export { useDevelopers, useDeveloperDetail, useRoles } from './useDevelopers'
 export { useSprints, useSprintDetail } from './useSprints'
+export { useEpics, useEpicDetail } from './useEpics'
 export { useGitHubConnections, useGitHubRepos } from './useGitHub'
 export { useMetricsData } from './useMetrics'
 export { useComplexityLevels } from './useComplexityLevels'

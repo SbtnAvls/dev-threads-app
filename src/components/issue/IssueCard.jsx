@@ -10,6 +10,7 @@ import clsx from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Avatar, StatusBadge, PriorityBadge } from '../ui'
+import { EpicBadge } from '../epic/EpicBadge'
 import { fullName, parseDate } from '../../utils/helpers'
 
 const glowByStatus = {
@@ -132,6 +133,7 @@ export function IssueCard({ issue, index = 0 }) {
                     <span className="max-w-[100px] truncate">{issue.sprint.name}</span>
                   </span>
                 )}
+                <EpicBadge epic={issue.epic} />
               </div>
             </div>
 
@@ -219,6 +221,7 @@ export function IssueCardCompact({ issue, index = 0 }) {
             <span className="max-w-[80px] truncate hidden sm:inline">{issue.sprint.name}</span>
           </span>
         )}
+        <EpicBadge epic={issue.epic} size="sm" />
         {issue.complexity && (
           <span
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border"

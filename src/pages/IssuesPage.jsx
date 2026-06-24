@@ -5,7 +5,7 @@ import { Search, Plus, LayoutGrid, List, Sparkles } from 'lucide-react'
 import { IssueCard, IssueCardCompact, NewIssueModal } from '../components/issue'
 import { SprintAIGenerateModal } from '../components/sprint'
 import { Button, Input, Select, EmptyState, useToast } from '../components/ui'
-import { useIssues, useIssueStats, useSprints, useDevelopers, useDebounce, useComplexityLevels } from '../hooks'
+import { useIssues, useIssueStats, useSprints, useEpics, useDevelopers, useDebounce, useComplexityLevels } from '../hooks'
 import { useAuth } from '../context/AuthContext'
 import { fullName } from '../utils/helpers'
 import orgService from '../services/orgService'
@@ -27,6 +27,7 @@ export function IssuesPage() {
   const searchQuery = useDebounce(searchInput)
   const statusFilter = searchParams.get('status') || 'all'
   const sprintFilter = searchParams.get('sprint') || 'all'
+  const epicFilter = searchParams.get('epic') || 'all'
   const assigneeFilter = searchParams.get('assignee') || 'all'
   const complexityFilter = searchParams.get('complexity') || 'all'
   const [viewMode, setViewMode] = useState('grid')
@@ -47,8 +48,9 @@ export function IssuesPage() {
   }, [])
   const { stats, loading: statsLoading } = useIssueStats()
 
-  // Load sprints, developers, and complexity levels for filter dropdowns
+  // Load sprints, epics, developers, and complexity levels for filter dropdowns
   const { sprints: allSprints } = useSprints({})
+  const { epics: allEpics } = useEpics({})
   const { developers } = useDevelopers()
   const { levels: complexityLevels } = useComplexityLevels()
 
@@ -87,16 +89,30 @@ export function IssuesPage() {
     return options
   }, [allSprints])
 
+  const epicOptions = useMemo(() => {
+    const options = [
+      { value: 'all', label: 'Todas las epicas' },
+      { value: 'none', label: 'Sin epica' },
+    ]
+    if (allEpics && allEpics.length > 0) {
+      allEpics
+        .filter(e => e.status === 'active' || e.status === 'planning')
+        .forEach(e => options.push({ value: String(e.id), label: e.name }))
+    }
+    return options
+  }, [allEpics])
+
   const buildParams = useCallback((overrides = {}) => {
-    const current = { status: statusFilter, sprint: sprintFilter, assignee: assigneeFilter, complexity: complexityFilter }
+    const current = { status: statusFilter, sprint: sprintFilter, epic: epicFilter, assignee: assigneeFilter, complexity: complexityFilter }
     const merged = { ...current, ...overrides }
     const params = {}
     if (merged.status !== 'all') params.status = merged.status
     if (merged.sprint !== 'all') params.sprint = merged.sprint
+    if (merged.epic !== 'all') params.epic = merged.epic
     if (merged.assignee !== 'all') params.assignee = merged.assignee
     if (merged.complexity !== 'all') params.complexity = merged.complexity
     return params
-  }, [statusFilter, sprintFilter, assigneeFilter, complexityFilter])
+  }, [statusFilter, sprintFilter, epicFilter, assigneeFilter, complexityFilter])
 
   const setStatusFilter = useCallback((value) => {
     setSearchParams(buildParams({ status: value }), { replace: true })
@@ -104,6 +120,10 @@ export function IssuesPage() {
 
   const setSprintFilter = useCallback((value) => {
     setSearchParams(buildParams({ sprint: value }), { replace: true })
+  }, [setSearchParams, buildParams])
+
+  const setEpicFilter = useCallback((value) => {
+    setSearchParams(buildParams({ epic: value }), { replace: true })
   }, [setSearchParams, buildParams])
 
   const setAssigneeFilter = useCallback((value) => {
@@ -120,10 +140,11 @@ export function IssuesPage() {
     if (statusFilter !== 'all') filters.status = statusFilter
     if (searchQuery.trim()) filters.search = searchQuery.trim()
     if (sprintFilter !== 'all') filters.sprint = sprintFilter
+    if (epicFilter !== 'all') filters.epic = epicFilter
     if (assigneeFilter !== 'all') filters.assigned_to = assigneeFilter
     if (complexityFilter !== 'all') filters.complexity = complexityFilter
     return filters
-  }, [statusFilter, searchQuery, sprintFilter, assigneeFilter, complexityFilter])
+  }, [statusFilter, searchQuery, sprintFilter, epicFilter, assigneeFilter, complexityFilter])
 
   const { issues: rawIssues, loading, createIssue, refetch } = useIssues(apiFilters)
 
@@ -196,7 +217,7 @@ export function IssuesPage() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Issues</h1>
           <p className="text-text-secondary mt-1">
-            {issues.length} issues{statusFilter !== 'all' ? ` (${statusFilters.find(f => f.value === statusFilter)?.label})` : ''}{sprintFilter !== 'all' ? ` - ${sprintOptions.find(o => o.value === sprintFilter)?.label || 'Sprint'}` : ''}
+            {issues.length} issues{statusFilter !== 'all' ? ` (${statusFilters.find(f => f.value === statusFilter)?.label})` : ''}{sprintFilter !== 'all' ? ` - ${sprintOptions.find(o => o.value === sprintFilter)?.label || 'Sprint'}` : ''}{epicFilter !== 'all' ? ` - ${epicOptions.find(o => o.value === epicFilter)?.label || 'Epica'}` : ''}
           </p>
         </div>
         {hasPermission('create_dev') && (
@@ -235,6 +256,16 @@ export function IssuesPage() {
             value={sprintFilter}
             onChange={setSprintFilter}
             placeholder="Sprint..."
+          />
+        </div>
+
+        {/* Epic filter */}
+        <div className="w-full sm:w-52">
+          <Select
+            options={epicOptions}
+            value={epicFilter}
+            onChange={setEpicFilter}
+            placeholder="Epica..."
           />
         </div>
 

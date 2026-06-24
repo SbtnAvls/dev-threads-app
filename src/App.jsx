@@ -9,6 +9,8 @@ import {
   IssueDetailPage,
   SprintsPage,
   SprintDetailPage,
+  EpicsPage,
+  EpicDetailPage,
   MetricsPage,
   LoginPage,
   RegisterOrgPage,
@@ -40,6 +42,8 @@ function App() {
                 <Route path="/issue/:id" element={<IssueDetailPage />} />
                 <Route path="/sprints" element={<SprintsPage />} />
                 <Route path="/sprint/:id" element={<SprintDetailPage />} />
+                <Route path="/epics" element={<EpicsPage />} />
+                <Route path="/epic/:id" element={<EpicDetailPage />} />
                 <Route path="/metrics" element={<MetricsPage />} />
                 <Route path="/settings" element={<OrgSettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

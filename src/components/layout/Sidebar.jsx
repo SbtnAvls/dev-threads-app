@@ -5,6 +5,7 @@ import {
   Users,
   ClipboardList,
   Zap,
+  Target,
   BarChart3,
   AlertTriangle,
   CheckCircle2,
@@ -35,6 +36,11 @@ const navItems = [
     label: 'Sprints',
     icon: Zap,
     to: '/sprints',
+  },
+  {
+    label: 'Epicas',
+    icon: Target,
+    to: '/epics',
   },
   {
     label: 'Metricas',

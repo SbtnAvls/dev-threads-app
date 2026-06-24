@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Pencil,
   Plus,
+  Target,
 } from 'lucide-react'
 import clsx from 'clsx'
 import {
@@ -18,6 +19,7 @@ import {
   SprintRepositories,
 } from '../components/sprint'
 import { statusConfig, formatSprintDate } from '../components/sprint/sprintConstants'
+import { EpicBadge } from '../components/epic/EpicBadge'
 import { Button, Card, useToast } from '../components/ui'
 import { useSprintDetail, useIssues } from '../hooks'
 import { useAuth } from '../context/AuthContext'
@@ -28,6 +30,18 @@ export function SprintDetailPage() {
   const { id } = useParams()
   const { sprint, loading: sprintLoading, error, refetch: refetchSprint, updateSprint } = useSprintDetail(id)
   const { issues, loading: issuesLoading, refetch: refetchIssues } = useIssues({ sprint: id })
+
+  // Distinct epics present among this sprint's issues (read-only mini-summary).
+  // Surfaces the orthogonal axis: which epics this sprint contributes to.
+  const sprintEpics = useMemo(() => {
+    const map = new Map()  // epicId -> epic compact object
+    issues.forEach((issue) => {
+      if (issue.epic && !map.has(issue.epic.id)) {
+        map.set(issue.epic.id, issue.epic)
+      }
+    })
+    return Array.from(map.values())
+  }, [issues])
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -343,6 +357,29 @@ export function SprintDetailPage() {
                     <p className="text-xs text-text-muted">{sprint.created_by.email}</p>
                   </div>
                 </Link>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Epics in this sprint (read-only mini-summary) */}
+          {sprintEpics.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.18 }}
+            >
+              <Card hover={false}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="w-4 h-4 text-text-muted" />
+                  <h3 className="text-sm font-medium text-text-muted">Epicas en este sprint</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sprintEpics.map((epic) => (
+                    <Link key={epic.id} to={`/epic/${epic.id}`}>
+                      <EpicBadge epic={epic} />
+                    </Link>
+                  ))}
+                </div>
               </Card>
             </motion.div>
           )}
