@@ -60,6 +60,9 @@ async function refreshAccessToken() {
 
   const data = await res.json()
   setTokens(data)
+  // Let long-lived consumers (e.g. the notifications WebSocket) re-auth with the
+  // fresh token instead of looping on a stale one.
+  window.dispatchEvent(new CustomEvent('dev-token-refreshed'))
   return data.access
 }
 

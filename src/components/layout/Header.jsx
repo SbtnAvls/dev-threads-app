@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Search, Menu, LogOut, Building2, ChevronDown, RefreshCw, Plus } from 'lucide-react'
+import { Search, Menu, LogOut, Building2, ChevronDown, RefreshCw, Plus } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Avatar } from '../ui'
+import { NotificationBell } from '../notifications'
 import { useAuth } from '../../hooks'
 import { fullName } from '../../utils/helpers'
 
@@ -152,13 +153,7 @@ export function Header({ onMenuClick }) {
 
         {/* Right side */}
         <div className="flex items-center gap-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative p-2 rounded-lg hover:bg-bg-elevated transition-colors"
-          >
-            <Bell className="w-5 h-5 text-text-secondary" />
-          </motion.button>
+          <NotificationBell />
 
           <div className="h-6 w-px bg-border-primary" />
 
